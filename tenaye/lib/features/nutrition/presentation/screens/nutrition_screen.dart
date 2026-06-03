@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/brand_header.dart';
 
 class NutritionScreen extends StatefulWidget {
   const NutritionScreen({Key? key}) : super(key: key);
@@ -31,75 +32,53 @@ class _NutritionScreenState extends State<NutritionScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 1. Core Header Block Panel
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20.0, 24.0, 20.0, 8.0),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Unified Brand Header Bar
+          const TenayeBrandHeader(
+            title: 'Nutrition Planner',
+            subtitle: 'AI-powered personalized meal plans',
+          ),
+
+          // Main Scroll Content Engine
+          Expanded(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 20.0),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text(
-                    'Nutrition Planner',
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                children: [
+                  // Persistent Form Input Box Container
+                  _buildInputFormCard(),
+                  const SizedBox(height: 20),
+
+                  // Conditionally swap view states based on generation trigger toggle
+                  if (_isPlanGenerated) ...[
+                    _buildCalorieTargetCard(),
+                    const SizedBox(height: 16),
+                    _buildMealScheduleTimeline(),
+                    const SizedBox(height: 16),
+                    _buildNutritionTipsCard(),
+                    const SizedBox(height: 24),
+                  ] else ...[
+                    // Empty state placeholder indicator setup
+                    const SizedBox(height: 60),
+                    Icon(
+                      Icons.restaurant_menu_rounded,
+                      size: 64,
+                      color: AppColors.textSecondary.withOpacity(0.3),
                     ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'AI-powered personalized meal plans',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Enter ingredients to build your meal plan',
+                      style: TextStyle(color: AppColors.textSecondary, fontSize: 15),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
-
-            // 2. Main Scroll Content Engine
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
-                child: Column(
-                  children: [
-                    // Persistent Form Input Box Container
-                    _buildInputFormCard(),
-                    const SizedBox(height: 20),
-
-                    // Conditionally swap view states based on generation trigger toggle
-                    if (_isPlanGenerated) ...[
-                      _buildCalorieTargetCard(),
-                      const SizedBox(height: 16),
-                      _buildMealScheduleTimeline(),
-                      const SizedBox(height: 16),
-                      _buildNutritionTipsCard(),
-                      const SizedBox(height: 24),
-                    ] else ...[
-                      // Empty state placeholder indicator setup
-                      const SizedBox(height: 60),
-                      Icon(
-                        Icons.restaurant_menu_rounded,
-                        size: 64,
-                        color: AppColors.textSecondary.withOpacity(0.3),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Enter ingredients to build your meal plan',
-                        style: TextStyle(color: AppColors.textSecondary, fontSize: 15),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -239,7 +218,6 @@ class _NutritionScreenState extends State<NutritionScreen> {
   Widget _buildMealCard(String mealTitle, String time, String calories, {bool isBreakfast = false}) {
     bool isExpanded = _expandedMeals[mealTitle] ?? false;
 
-    // Map localized asset icons nicely
     IconData getMealIcon() {
       if (mealTitle.contains('Breakfast')) return Icons.wb_twighlight;
       if (mealTitle.contains('Snack')) return Icons.apple_rounded;
@@ -255,7 +233,6 @@ class _NutritionScreenState extends State<NutritionScreen> {
       ),
       child: Column(
         children: [
-          // Header Row click target trigger area
           ListTile(
             onTap: () {
               setState(() {
@@ -277,7 +254,6 @@ class _NutritionScreenState extends State<NutritionScreen> {
             ),
           ),
 
-          // High-Fidelity Expanded Breakdown View Panel (image_93e4c6.png)
           if (isExpanded && isBreakfast)
             Padding(
               padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 20.0),
@@ -287,7 +263,6 @@ class _NutritionScreenState extends State<NutritionScreen> {
                   const Divider(height: 1, color: AppColors.border),
                   const SizedBox(height: 16),
                   
-                  // Ingredients Section Label
                   _buildSubSectionHeader('FOODS'),
                   _buildBulletPointItem('2 Injera'),
                   _buildBulletPointItem('1 avocado (100g)'),
@@ -296,7 +271,6 @@ class _NutritionScreenState extends State<NutritionScreen> {
                   _buildBulletPointItem('1 cup herbal tea'),
                   const SizedBox(height: 16),
 
-                  // Nutrients Macro Counter Array Layout
                   _buildSubSectionHeader('NUTRIENTS'),
                   const Text(
                     'Protein: 38g, Carbohydrates: 67g, Fats: 25g',
@@ -304,7 +278,6 @@ class _NutritionScreenState extends State<NutritionScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Practical Cooking Guide Blocks
                   _buildSubSectionHeader('PREPARATION'),
                   const Text(
                     'Serve grilled chicken sliced on top of the injera, add sliced avocado, and enjoy with a banana and herbal tea.',
@@ -326,7 +299,6 @@ class _NutritionScreenState extends State<NutritionScreen> {
     );
   }
 
-  // Widget: Supplemental Intelligence Insights Card (image_93e502.png)
   Widget _buildNutritionTipsCard() {
     return Container(
       width: double.infinity,
@@ -359,7 +331,6 @@ class _NutritionScreenState extends State<NutritionScreen> {
     );
   }
 
-  // Mini Helpers for Text layout structure optimization
   Widget _buildSubSectionHeader(String label) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6.0),

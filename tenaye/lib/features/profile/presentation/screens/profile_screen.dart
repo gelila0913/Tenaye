@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/brand_header.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -36,184 +37,180 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header Segment (image_d9bfb4.png)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Unified Brand Header Bar
+          TenayeBrandHeader(
+            title: 'Health Profile',
+            subtitle: 'gelilasintayehu79@gmail.com',
+            trailing: IconButton(
+              icon: const Icon(Icons.logout_rounded, color: Colors.white),
+              tooltip: 'Logout',
+              onPressed: () {},
+            ),
+          ),
+          
+          Expanded(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Health Profile', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-                      const SizedBox(height: 4),
-                      Text('gelilasintayehu79@gmail.com', style: const TextStyle(fontSize: 15, color: AppColors.textSecondary)),
-                    ],
+                  // 1. Basic Information Card Component (image_d9bfb4.png)
+                  _buildCardWrapper(
+                    title: 'Basic Information',
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(child: _buildNumericField('Age', _age, (val) => setState(() => _age = val))),
+                            const SizedBox(width: 16),
+                            Expanded(child: _buildDropdownField('Gender', _gender, ['Female', 'Male', 'Other'], (val) => setState(() => _gender = val!))),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(child: _buildNumericField('Height (cm)', _height, (val) => setState(() => _height = val))),
+                            const SizedBox(width: 16),
+                            Expanded(child: _buildNumericField('Weight (kg)', _weight, (val) => setState(() => _weight = val))),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        _buildDropdownField('Blood Type', _bloodType, ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'], (val) => setState(() => _bloodType = val!)),
+                      ],
+                    ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.logout_rounded, color: AppColors.textPrimary),
-                    onPressed: () {},
+
+                  // 2. Lifestyle Settings Card Component (image_d9bf75.png)
+                  _buildCardWrapper(
+                    title: 'Lifestyle',
+                    child: Column(
+                      children: [
+                        _buildDropdownField('Activity Level', _activityLevel, ['Sedentary', 'Light', 'Moderate', 'Active'], (val) => setState(() => _activityLevel = val!)),
+                        const SizedBox(height: 16),
+                        _buildDropdownField('Budget Range', _budgetRange, ['Low', 'Medium', 'High'], (val) => setState(() => _budgetRange = val!)),
+                      ],
+                    ),
+                  ),
+
+                  // 3. Medical Conditions Chip Wrap Selection (image_d9bf75.png)
+                  _buildCardWrapper(
+                    title: 'Medical Conditions',
+                    child: Wrap(
+                      spacing: 8.0,
+                      runSpacing: 8.0,
+                      children: _conditions.map((condition) {
+                        return ChoiceChip(
+                          label: Text(condition),
+                          selected: false,
+                          onSelected: (_) {},
+                          labelStyle: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                          backgroundColor: AppColors.background.withOpacity(0.4),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0), side: BorderSide.none),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+
+                  // 4. Allergies Token Entry Card Component (image_d9bf3b.png)
+                  _buildCardWrapper(
+                    title: 'Allergies',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildAddInputRow('Add allergy...'),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8.0,
+                          children: _allergies.map((allergy) => _buildTokenChip(allergy)).toList(),
+                        )
+                      ],
+                    ),
+                  ),
+
+                  // 5. Health Goals Chip Selectors Card Component (image_d9bf3b.png)
+                  _buildCardWrapper(
+                    title: 'Health Goals',
+                    child: Wrap(
+                      spacing: 8.0,
+                      runSpacing: 8.0,
+                      children: _healthGoals.map((goal) {
+                        final isSelected = _selectedGoals.contains(goal);
+                        return ChoiceChip(
+                          label: Text(goal),
+                          selected: isSelected,
+                          onSelected: (_) {},
+                          labelStyle: TextStyle(color: isSelected ? Colors.white : AppColors.textSecondary, fontSize: 13, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal),
+                          backgroundColor: AppColors.background.withOpacity(0.4),
+                          selectedColor: Colors.orange.shade700,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0), side: BorderSide.none),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+
+                  // 6. Available Foods Component Segment (image_d96d3e.png)
+                  _buildCardWrapper(
+                    title: 'Available Foods at Home',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildAddInputRow('e.g., rice, eggs...'),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8.0,
+                          runSpacing: 8.0,
+                          children: _foods.map((food) => _buildTokenChip(food)).toList(),
+                        )
+                      ],
+                    ),
+                  ),
+
+                  // 7. Emergency Contacts Section Array Card Component (image_d96d3e.png)
+                  _buildCardWrapper(
+                    title: 'Emergency Contacts',
+                    trailingAction: true,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: const [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Sintayehu Demeke', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                            SizedBox(height: 4),
+                            Text('father · 0911387501', style: TextStyle(fontSize: 14, color: AppColors.textSecondary)),
+                          ],
+                        ),
+                        Icon(Icons.close_rounded, color: AppColors.textSecondary, size: 20),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Form Commit CTA Action Button (image_d96d3e.png)
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton.icon(
+                      onPressed: () {},
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryGreen,
+                        foregroundColor: AppColors.textLight,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                      ),
+                      icon: const Icon(Icons.save_rounded, size: 18),
+                      label: const Text('Save Profile', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
-
-              // 1. Basic Information Card Component (image_d9bfb4.png)
-              _buildCardWrapper(
-                title: 'Basic Information',
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(child: _buildNumericField('Age', _age, (val) => setState(() => _age = val))),
-                        const SizedBox(width: 16),
-                        Expanded(child: _buildDropdownField('Gender', _gender, ['Female', 'Male', 'Other'], (val) => setState(() => _gender = val!))),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(child: _buildNumericField('Height (cm)', _height, (val) => setState(() => _height = val))),
-                        const SizedBox(width: 16),
-                        Expanded(child: _buildNumericField('Weight (kg)', _weight, (val) => setState(() => _weight = val))),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    _buildDropdownField('Blood Type', _bloodType, ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'], (val) => setState(() => _bloodType = val!)),
-                  ],
-                ),
-              ),
-
-              // 2. Lifestyle Settings Card Component (image_d9bf75.png)
-              _buildCardWrapper(
-                title: 'Lifestyle',
-                child: Column(
-                  children: [
-                    _buildDropdownField('Activity Level', _activityLevel, ['Sedentary', 'Light', 'Moderate', 'Active'], (val) => setState(() => _activityLevel = val!)),
-                    const SizedBox(height: 16),
-                    _buildDropdownField('Budget Range', _budgetRange, ['Low', 'Medium', 'High'], (val) => setState(() => _budgetRange = val!)),
-                  ],
-                ),
-              ),
-
-              // 3. Medical Conditions Chip Wrap Selection (image_d9bf75.png)
-              _buildCardWrapper(
-                title: 'Medical Conditions',
-                child: Wrap(
-                  spacing: 8.0,
-                  runSpacing: 8.0,
-                  children: _conditions.map((condition) {
-                    return ChoiceChip(
-                      label: Text(condition),
-                      selected: false,
-                      onSelected: (_) {},
-                      labelStyle: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
-                      backgroundColor: AppColors.background.withOpacity(0.4),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0), side: BorderSide.none),
-                    );
-                  }).toList(),
-                ),
-              ),
-
-              // 4. Allergies Token Entry Card Component (image_d9bf3b.png)
-              _buildCardWrapper(
-                title: 'Allergies',
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildAddInputRow('Add allergy...'),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8.0,
-                      children: _allergies.map((allergy) => _buildTokenChip(allergy)).toList(),
-                    )
-                  ],
-                ),
-              ),
-
-              // 5. Health Goals Chip Selectors Card Component (image_d9bf3b.png)
-              _buildCardWrapper(
-                title: 'Health Goals',
-                child: Wrap(
-                  spacing: 8.0,
-                  runSpacing: 8.0,
-                  children: _healthGoals.map((goal) {
-                    final isSelected = _selectedGoals.contains(goal);
-                    return ChoiceChip(
-                      label: Text(goal),
-                      selected: isSelected,
-                      onSelected: (_) {},
-                      labelStyle: TextStyle(color: isSelected ? Colors.white : AppColors.textSecondary, fontSize: 13, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal),
-                      backgroundColor: AppColors.background.withOpacity(0.4),
-                      selectedColor: Colors.orange.shade700,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0), side: BorderSide.none),
-                    );
-                  }).toList(),
-                ),
-              ),
-
-              // 6. Available Foods Component Segment (image_d96d3e.png)
-              _buildCardWrapper(
-                title: 'Available Foods at Home',
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildAddInputRow('e.g., rice, eggs...'),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8.0,
-                      runSpacing: 8.0,
-                      children: _foods.map((food) => _buildTokenChip(food)).toList(),
-                    )
-                  ],
-                ),
-              ),
-
-              // 7. Emergency Contacts Section Array Card Component (image_d96d3e.png)
-              _buildCardWrapper(
-                title: 'Emergency Contacts',
-                trailingAction: true,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Sintayehu Demeke', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-                        const SizedBox(height: 4),
-                        Text('father · 0911387501', style: const TextStyle(fontSize: 14, color: AppColors.textSecondary)),
-                      ],
-                    ),
-                    const Icon(Icons.close_rounded, color: AppColors.textSecondary, size: 20),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Form Commit CTA Action Button (image_d96d3e.png)
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton.icon(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryGreen,
-                    foregroundColor: AppColors.textLight,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-                  ),
-                  icon: const Icon(Icons.save_rounded, size: 18),
-                  label: const Text('Save Profile', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

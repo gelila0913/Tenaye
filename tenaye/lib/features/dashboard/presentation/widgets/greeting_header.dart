@@ -30,12 +30,23 @@ class GreetingHeader extends StatelessWidget {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text("Good afternoon,", style: AppTextStyles.greetingSub),
-                    SizedBox(height: 4),
-                    Text("Gelila 👋", style: AppTextStyles.greetingName),
-                    SizedBox(height: 6),
-                    Text("ጤናዬ — Your Health Companion", style: AppTextStyles.amharicSubtitle),
+                  children: [
+                    const Text("Good afternoon,", style: AppTextStyles.greetingSub),
+                    const SizedBox(height: 4),
+                    const Text("Gelila 👋", style: AppTextStyles.greetingName),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Image.asset(
+                          'assets/images/logo_white.png',
+                          width: 22,
+                          height: 22,
+                          fit: BoxFit.contain,
+                        ),
+                        const SizedBox(width: 8),
+                        const Text("ጤናዬ — Your Health Companion", style: AppTextStyles.amharicSubtitle),
+                      ],
+                    ),
                   ],
                 ),
               ),

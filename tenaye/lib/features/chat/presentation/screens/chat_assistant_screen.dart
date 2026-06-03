@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/brand_header.dart';
 
 class ChatAssistantScreen extends StatefulWidget {
   const ChatAssistantScreen({Key? key}) : super(key: key);
@@ -31,50 +32,16 @@ class _ChatAssistantScreenState extends State<ChatAssistantScreen> {
       body: Column(
         children: [
           // 1. Solid Top Brand Header Panel
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.only(top: 60.0, left: 20.0, right: 20.0, bottom: 20.0),
-            color: AppColors.primaryGreen,
-            child: Row(
-              children: [
-                // Minimal Back Navigation Anchor
-                GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
-                ),
-                const SizedBox(width: 16),
-                // Bot avatar badge matching design layout
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(Icons.android_rounded, color: Colors.white, size: 22),
-                ),
-                const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'ጤናዬ Assistant',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Your personal health companion',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.white.withOpacity(0.85),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+          TenayeBrandHeader(
+            title: 'AI Assistant',
+            subtitle: 'Your personal health companion',
+            trailing: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.android_rounded, color: Colors.white, size: 22),
             ),
           ),
 

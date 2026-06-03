@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/brand_header.dart';
 
 class FitnessScreen extends StatefulWidget {
   const FitnessScreen({Key? key}) : super(key: key);
@@ -33,84 +34,61 @@ class _FitnessScreenState extends State<FitnessScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 1. Title Header Area
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20.0, 24.0, 20.0, 8.0),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Unified Brand Header Bar
+          const TenayeBrandHeader(
+            title: 'Fitness Planner',
+            subtitle: 'AI-powered personalized workouts',
+          ),
+
+          // Main Scroll Engine
+          Expanded(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 20.0),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text(
-                    'Fitness Planner',
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                children: [
+                  // Trigger Action Control Panel Bar
+                  _buildActionButtonHub(),
+                  const SizedBox(height: 20),
+
+                  if (_isPlanGenerated) ...[
+                    // Weekly Focus Strategy Summary Box
+                    _buildWeeklyGoalCard(),
+                    const SizedBox(height: 16),
+
+                    // Weekly Schedule Timeline Loops
+                    _buildScheduleTimeline(),
+                    const SizedBox(height: 16),
+
+                    // Supplemental Tips Block Panel
+                    _buildFitnessTipsCard(),
+                    const SizedBox(height: 24),
+                  ] else ...[
+                    // Initial State Template View Empty Placement
+                    const SizedBox(height: 80),
+                    Icon(
+                      Icons.fitness_center_rounded,
+                      size: 64,
+                      color: AppColors.textSecondary.withOpacity(0.3),
                     ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'AI-powered personalized workouts',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Tap button to construct your custom training regimen',
+                      style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
-
-            // 2. Main Scroll Engine
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
-                child: Column(
-                  children: [
-                    // Trigger Action Control Panel Bar
-                    _buildActionButtonHub(),
-                    const SizedBox(height: 20),
-
-                    if (_isPlanGenerated) ...[
-                      // Weekly Focus Strategy Summary Box
-                      _buildWeeklyGoalCard(),
-                      const SizedBox(height: 16),
-
-                      // Weekly Schedule Timeline Loops
-                      _buildScheduleTimeline(),
-                      const SizedBox(height: 16),
-
-                      // Supplemental Tips Block Panel
-                      _buildFitnessTipsCard(),
-                      const SizedBox(height: 24),
-                    ] else ...[
-                      // Initial State Template View Empty Placement
-                      const SizedBox(height: 80),
-                      Icon(
-                        Icons.fitness_center_rounded,
-                        size: 64,
-                        color: AppColors.textSecondary.withOpacity(0.3),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Tap button to construct your custom training regimen',
-                        style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  // Widget: Primary Action Button Control Bar Hub (image_93dd7d.png)
   Widget _buildActionButtonHub() {
     return SizedBox(
       width: double.infinity,
@@ -137,7 +115,6 @@ class _FitnessScreenState extends State<FitnessScreen> {
     );
   }
 
-  // Widget: AI Goal Insight Card Module (image_93dd7d.png)
   Widget _buildWeeklyGoalCard() {
     return Container(
       width: double.infinity,
@@ -174,7 +151,6 @@ class _FitnessScreenState extends State<FitnessScreen> {
     );
   }
 
-  // Widget: Comprehensive Weekly Loop Container (image_93dd48.png / image_93dd24.png)
   Widget _buildScheduleTimeline() {
     return Column(
       children: [
@@ -195,7 +171,6 @@ class _FitnessScreenState extends State<FitnessScreen> {
     );
   }
 
-  // Widget: Expandable Workout Item Row Card (image_93dcea.png / image_93dcac.png)
   Widget _buildWorkoutCard(String tag, String title, String meta, bool standardHasDetails) {
     bool isCompleted = _completedDays[tag] ?? false;
     bool isExpanded = _expandedDays[tag] ?? false;
@@ -207,7 +182,6 @@ class _FitnessScreenState extends State<FitnessScreen> {
         borderRadius: BorderRadius.circular(16.0),
         border: Border.all(color: AppColors.border.withOpacity(0.4)),
       ),
-      // Opacity handles the elegant "blur/dimmed" look for done states seamlessly (image_93dcac.png)
       child: AnimatedOpacity(
         duration: const Duration(milliseconds: 250),
         opacity: isCompleted ? 0.45 : 1.0,
@@ -250,7 +224,6 @@ class _FitnessScreenState extends State<FitnessScreen> {
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Actionable Task Complete Circular Ring Trigger Button
                   GestureDetector(
                     onTap: () {
                       setState(() {
@@ -283,7 +256,6 @@ class _FitnessScreenState extends State<FitnessScreen> {
               ),
             ),
 
-            // Exercise Breakdown Panel sub lists array map (image_93dcea.png)
             if (isExpanded && standardHasDetails)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
@@ -304,7 +276,6 @@ class _FitnessScreenState extends State<FitnessScreen> {
     );
   }
 
-  // Widget: Secondary Sub-Item Exercise Inner Layout Component (image_93dcea.png)
   Widget _buildExerciseSubItem(String name, String sets, String instructions) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8.0),
@@ -345,7 +316,6 @@ class _FitnessScreenState extends State<FitnessScreen> {
     );
   }
 
-  // Widget: Static Rest Day Card Item Element Layout (image_93dd48.png)
   Widget _buildRestDayCard(String tag) {
     return Container(
       width: double.infinity,
@@ -378,7 +348,6 @@ class _FitnessScreenState extends State<FitnessScreen> {
     );
   }
 
-  // Widget: Base Educational Tips Panel Module (image_93dd24.png)
   Widget _buildFitnessTipsCard() {
     return Container(
       width: double.infinity,
