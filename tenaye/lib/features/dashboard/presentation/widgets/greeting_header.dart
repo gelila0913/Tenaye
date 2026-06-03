@@ -38,7 +38,7 @@ class GreetingHeader extends StatelessWidget {
                     Row(
                       children: [
                         Image.asset(
-                          'assets/images/logo_white.png',
+                          'assets/images/logo.png',
                           width: 22,
                           height: 22,
                           fit: BoxFit.contain,

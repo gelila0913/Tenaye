@@ -49,7 +49,7 @@ class TenayeBrandHeader extends StatelessWidget {
                     ),
                   ],
                   Image.asset(
-                    'assets/images/logo_white.png',
+                    'assets/images/logo.png',
                     width: 32,
                     height: 32,
                     fit: BoxFit.contain,
