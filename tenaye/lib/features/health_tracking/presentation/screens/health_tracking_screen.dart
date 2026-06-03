@@ -1,20 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../data/services/health_tracking_service.dart';
 import 'log_measurement_sheet.dart';
-
-// Simple lightweight local model to represent logged vital entries
-class HealthRecord {
-  final String type;
-  final String displayValue;
-  final String timestamp;
-
-  HealthRecord({
-    required this.type,
-    required this.displayValue,
-    required this.timestamp,
-  });
-}
 
 class HealthTrackingScreen extends StatefulWidget {
   const HealthTrackingScreen({super.key});
@@ -36,24 +24,9 @@ class _HealthTrackingScreenState extends State<HealthTrackingScreen> {
     'Temperature'
   ];
 
-  // In-memory mock list simulating database records matching image_e7f97b.png
-  final List<HealthRecord> _loggedRecords = [
-    HealthRecord(
-      type: 'Blood Pressure',
-      displayValue: '120/80 mmHg',
-      timestamp: 'Jun 3, 1:18 PM',
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
     final currentCategory = _categories[_selectedCategoryIndex];
-
-    // Filter down records belonging strictly to the currently selected horizontal category pill
-    // (If 'Vitals' is picked, we show everything as an aggregate view)
-    final filteredRecords = currentCategory == 'Vitals'
-        ? _loggedRecords
-        : _loggedRecords.where((record) => record.type == currentCategory).toList();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -90,9 +63,7 @@ class _HealthTrackingScreenState extends State<HealthTrackingScreen> {
                         context: context,
                         barrierDismissible: true,
                         builder: (context) => LogMeasurementModal(
-                          initialType: currentCategory == 'Vitals'
-                              ? 'Blood Pressure'
-                              : currentCategory,
+                          initialType: currentCategory,
                         ),
                       );
                     },
@@ -166,10 +137,17 @@ class _HealthTrackingScreenState extends State<HealthTrackingScreen> {
               ),
               const SizedBox(height: 24),
 
-              // Content Swapper: Flips between dynamic ListView Cards and Empty Placeholder Illustration
+              // Content Swapper: Flips between dynamic ValueListenableBuilder list and empty state
               Expanded(
-                child: filteredRecords.isNotEmpty
-                    ? ListView.builder(
+                child: ValueListenableBuilder<List<HealthRecord>>(
+                  valueListenable: HealthTrackingService().recordsNotifier,
+                  builder: (context, records, child) {
+                    final filteredRecords = records
+                        .where((record) => record.type == currentCategory)
+                        .toList();
+
+                    if (filteredRecords.isNotEmpty) {
+                      return ListView.builder(
                         itemCount: filteredRecords.length,
                         physics: const BouncingScrollPhysics(),
                         itemBuilder: (context, index) {
@@ -180,7 +158,7 @@ class _HealthTrackingScreenState extends State<HealthTrackingScreen> {
                               width: double.infinity,
                               padding: const EdgeInsets.all(18.0),
                               decoration: BoxDecoration(
-                                color: AppColors.surface, // Clean crisp white card layout block
+                                color: AppColors.surface,
                                 borderRadius: BorderRadius.circular(16.0),
                                 border: Border.all(
                                   color: AppColors.border.withValues(alpha: 0.4),
@@ -197,7 +175,6 @@ class _HealthTrackingScreenState extends State<HealthTrackingScreen> {
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  // Metric measurement readout text string value label
                                   Text(
                                     record.displayValue,
                                     style: const TextStyle(
@@ -207,7 +184,6 @@ class _HealthTrackingScreenState extends State<HealthTrackingScreen> {
                                       letterSpacing: -0.3,
                                     ),
                                   ),
-                                  // Timestamp context info block formatted on right edge boundary
                                   Text(
                                     record.timestamp,
                                     style: TextStyle(
@@ -221,8 +197,9 @@ class _HealthTrackingScreenState extends State<HealthTrackingScreen> {
                             ),
                           );
                         },
-                      )
-                    : Center(
+                      );
+                    } else {
+                      return Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -233,15 +210,18 @@ class _HealthTrackingScreenState extends State<HealthTrackingScreen> {
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              'No measurements yet',
+                              'No measurements logged yet',
                               style: AppTextStyles.bodySecondary.copyWith(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                              ),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
                             ),
                           ],
                         ),
-                      ),
+                      );
+                    }
+                  },
+                ),
               ),
             ],
           ),

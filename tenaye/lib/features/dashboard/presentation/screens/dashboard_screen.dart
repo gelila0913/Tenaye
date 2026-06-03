@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/utils/tab_navigation_controller.dart';
 import '../../../chat/presentation/screens/chat_assistant_screen.dart';
 import '../widgets/greeting_header.dart';
 import '../widgets/quick_action_grid.dart';
@@ -62,7 +63,10 @@ class DashboardScreen extends StatelessWidget {
                                 ),
                                 icon: const Icon(Icons.favorite_border, size: 18),
                                 label: const Text("Check In", style: TextStyle(fontWeight: FontWeight.bold)),
-                                onPressed: () {},
+                                onPressed: () {
+                                  // Switch to Mood page (index 3)
+                                  TabNavigationController.changeTab(3);
+                                },
                               ),
                             ],
                           ),

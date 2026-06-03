@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../data/services/health_tracking_service.dart';
 
 class LogMeasurementModal extends StatefulWidget {
   final String initialType;
@@ -23,13 +24,21 @@ class _LogMeasurementModalState extends State<LogMeasurementModal> {
     'Blood Pressure',
     'Blood Glucose',
     'Weight',
-    'Heart Rate'
+    'Heart Rate',
+    'Water Intake',
+    'Oxygen Level',
+    'Temperature'
   ];
 
   @override
   void initState() {
     super.initState();
-    _selectedType = widget.initialType;
+    // Safety check to ensure the initialType is within _measurementTypes
+    if (_measurementTypes.contains(widget.initialType)) {
+      _selectedType = widget.initialType;
+    } else {
+      _selectedType = 'Blood Pressure';
+    }
   }
 
   @override
@@ -48,14 +57,26 @@ class _LogMeasurementModalState extends State<LogMeasurementModal> {
     String valueHint = 'Enter value';
 
     if (isBloodPressure) {
-      valueLabel = 'Value (mmHg)';
-      valueHint = 'Enter value';
+      valueLabel = 'Systolic (mmHg)';
+      valueHint = 'Upper number (e.g. 120)';
     } else if (_selectedType == 'Blood Glucose') {
       valueLabel = 'Value (mg/dL)';
+      valueHint = 'e.g. 90';
     } else if (_selectedType == 'Weight') {
       valueLabel = 'Value (kg)';
+      valueHint = 'e.g. 70';
     } else if (_selectedType == 'Heart Rate') {
       valueLabel = 'Value (bpm)';
+      valueHint = 'e.g. 72';
+    } else if (_selectedType == 'Water Intake') {
+      valueLabel = 'Value (mL)';
+      valueHint = 'e.g. 250';
+    } else if (_selectedType == 'Oxygen Level') {
+      valueLabel = 'Value (%)';
+      valueHint = 'e.g. 98';
+    } else if (_selectedType == 'Temperature') {
+      valueLabel = 'Value (°C)';
+      valueHint = 'e.g. 36.5';
     }
 
     return Dialog(
@@ -90,7 +111,7 @@ class _LogMeasurementModalState extends State<LogMeasurementModal> {
               ),
               const SizedBox(height: 20),
 
-              // Dropdown Input Section: Type Selecion Row
+              // Dropdown Input Section: Type Selection Row
               const Text('Type', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: AppColors.textPrimary)),
               const SizedBox(height: 8),
               Container(
@@ -132,7 +153,7 @@ class _LogMeasurementModalState extends State<LogMeasurementModal> {
                 const SizedBox(height: 18),
                 const Text('Diastolic (mmHg)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: AppColors.textPrimary)),
                 const SizedBox(height: 8),
-                _buildInputField(controller: _diastolicController, hint: 'Lower number'),
+                _buildInputField(controller: _diastolicController, hint: 'Lower number (e.g. 80)'),
               ],
               const SizedBox(height: 18),
 
@@ -148,11 +169,19 @@ class _LogMeasurementModalState extends State<LogMeasurementModal> {
                 height: 48,
                 child: ElevatedButton(
                   onPressed: () {
-                    // Logic processing tracking state maps down here later
-                    Navigator.of(context).pop();
+                    if (_valueController.text.trim().isNotEmpty) {
+                      HealthTrackingService().addRecord(
+                        _selectedType,
+                        _valueController.text.trim(),
+                        diastolic: _diastolicController.text.trim().isEmpty 
+                            ? null 
+                            : _diastolicController.text.trim(),
+                      );
+                      Navigator.of(context).pop();
+                    }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryGreen.withValues(alpha: 0.6), // Light structural matching teal tone tint
+                    backgroundColor: AppColors.primaryGreen,
                     foregroundColor: AppColors.textLight,
                     elevation: 0,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
@@ -178,7 +207,7 @@ class _LogMeasurementModalState extends State<LogMeasurementModal> {
     return TextField(
       controller: controller,
       maxLines: maxLines,
-      keyboardType: maxLines == 1 ? TextInputType.number : TextInputType.text,
+      keyboardType: maxLines == 1 ? const TextInputType.numberWithOptions(decimal: true) : TextInputType.text,
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: const TextStyle(color: AppColors.textSecondary, fontSize: 15),

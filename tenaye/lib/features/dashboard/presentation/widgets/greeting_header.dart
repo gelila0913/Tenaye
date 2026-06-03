@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../chat/presentation/screens/chat_assistant_screen.dart';
+import '../../../emergency_sos/presentation/screens/sos_active_screen.dart';
+import '../../../health_tracking/data/services/health_tracking_service.dart';
 
 class GreetingHeader extends StatelessWidget {
   const GreetingHeader({super.key});
@@ -24,7 +25,7 @@ class GreetingHeader extends StatelessWidget {
           // Top row containing greeting details and action targets
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
                 child: Column(
@@ -38,50 +39,60 @@ class GreetingHeader extends StatelessWidget {
                   ],
                 ),
               ),
-              Row(
-                children: [
-                  // Quick AI shortcut button block
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.surface.withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: IconButton(
-                      icon: const Icon(Icons.smart_toy_outlined, color: AppColors.textLight),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const ChatAssistantScreen()),
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  // Sudden danger instant SOS trigger badge
-                  Container(
-                    decoration: const BoxDecoration(
-                      color: AppColors.emergencyRed,
-                      shape: BoxShape.circle,
-                    ),
-                    child: IconButton(
-                      icon: const Icon(Icons.warning_amber_rounded, color: AppColors.textLight),
-                      onPressed: () {},
-                    ),
-                  ),
-                ],
-              )
+              // Enlarged Sudden danger instant SOS trigger badge
+              Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  color: AppColors.emergencyRed,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.emergencyRed.withValues(alpha: 0.4),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    )
+                  ]
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.warning_amber_rounded, color: AppColors.textLight, size: 30),
+                  tooltip: 'Emergency SOS',
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const SosScreen()),
+                    );
+                  },
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 32),
+          
           // Horizontal inline vitals tracker panel segment row
-          Row(
-            children: [
-              Expanded(child: _buildVitalChip("Blood Pressure", "—", "mmHg")),
-              const SizedBox(width: 12),
-              Expanded(child: _buildVitalChip("Glucose", "—", "mg/dL")),
-              const SizedBox(width: 12),
-              Expanded(child: _buildVitalChip("Weight", "—", "kg")),
-            ],
+          ValueListenableBuilder<List<HealthRecord>>(
+            valueListenable: HealthTrackingService().recordsNotifier,
+            builder: (context, records, child) {
+              String getLatestValue(String type, String unit) {
+                final match = records.lastWhere(
+                  (r) => r.type == type,
+                  orElse: () => HealthRecord(type: type, displayValue: "—", timestamp: ""),
+                );
+                if (match.displayValue == "—") return "—";
+                // Strip the unit suffix to display only the raw values on the dashboard vital chips
+                return match.displayValue.replaceAll(" $unit", "");
+              }
+
+              return Row(
+                children: [
+                  Expanded(child: _buildVitalChip("Blood Pressure", getLatestValue("Blood Pressure", "mmHg"), "mmHg")),
+                  const SizedBox(width: 12),
+                  Expanded(child: _buildVitalChip("Glucose", getLatestValue("Blood Glucose", "mg/dL"), "mg/dL")),
+                  const SizedBox(width: 12),
+                  Expanded(child: _buildVitalChip("Weight", getLatestValue("Weight", "kg"), "kg")),
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -98,11 +109,28 @@ class GreetingHeader extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(label, style: AppTextStyles.vitalLabel.copyWith(color: AppColors.textLight.withValues(alpha: 0.8)), textAlign: TextAlign.center),
+          Text(
+            label, 
+            style: AppTextStyles.vitalLabel.copyWith(
+              color: AppColors.textLight.withValues(alpha: 0.8),
+            ), 
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: 6),
-          Text(value, style: AppTextStyles.vitalValuePlaceholder.copyWith(color: AppColors.textLight)),
+          Text(
+            value, 
+            style: AppTextStyles.vitalValuePlaceholder.copyWith(
+              color: AppColors.textLight,
+              fontSize: value.length > 6 ? 15 : 18,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text(unit, style: AppTextStyles.vitalUnit.copyWith(color: AppColors.textLight.withValues(alpha: 0.7))),
+          Text(
+            unit, 
+            style: AppTextStyles.vitalUnit.copyWith(
+              color: AppColors.textLight.withValues(alpha: 0.7),
+            ),
+          ),
         ],
       ),
     );

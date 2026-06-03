@@ -16,6 +16,9 @@ import 'features/profile/presentation/screens/profile_screen.dart';
 import 'features/medications/data/models/medication_model.dart';
 import 'features/medications/data/services/medication_service.dart';
 
+// Navigation controller import
+import 'core/utils/tab_navigation_controller.dart';
+
 class TenayeAppWorkspace extends StatefulWidget {
   const TenayeAppWorkspace({super.key});
 
@@ -24,9 +27,6 @@ class TenayeAppWorkspace extends StatefulWidget {
 }
 
 class _TenayeAppWorkspaceState extends State<TenayeAppWorkspace> {
-  // Default to land on Medications tab (index 2) or change as desired
-  int _currentIndex = 2; 
-
   @override
   void initState() {
     super.initState();
@@ -43,12 +43,6 @@ class _TenayeAppWorkspaceState extends State<TenayeAppWorkspace> {
   void dispose() {
     MedicationService().stopAlarmCheckService();
     super.dispose();
-  }
-
-  void _onNavigationTabTapped(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
   }
 
   void _showAlarmDialog(Medication medication, String scheduledTime) {
@@ -165,16 +159,21 @@ class _TenayeAppWorkspaceState extends State<TenayeAppWorkspace> {
       const ProfileScreen(),
     ];
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: IndexedStack(
-        index: _currentIndex,
-        children: featureScreens,
-      ),
-      bottomNavigationBar: TenayeBottomNavBar(
-        currentIndex: _currentIndex,
-        onTap: _onNavigationTabTapped,
-      ),
+    return ValueListenableBuilder<int>(
+      valueListenable: TabNavigationController.selectedIndex,
+      builder: (context, currentIndex, child) {
+        return Scaffold(
+          backgroundColor: AppColors.background,
+          body: IndexedStack(
+            index: currentIndex,
+            children: featureScreens,
+          ),
+          bottomNavigationBar: TenayeBottomNavBar(
+            currentIndex: currentIndex,
+            onTap: TabNavigationController.changeTab,
+          ),
+        );
+      },
     );
   }
 }
