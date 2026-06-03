@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../chat/presentation/screens/chat_assistant_screen.dart';
 
 class GreetingHeader extends StatelessWidget {
   const GreetingHeader({super.key});
@@ -47,7 +48,12 @@ class GreetingHeader extends StatelessWidget {
                     ),
                     child: IconButton(
                       icon: const Icon(Icons.smart_toy_outlined, color: AppColors.textLight),
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const ChatAssistantScreen()),
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(width: 12),

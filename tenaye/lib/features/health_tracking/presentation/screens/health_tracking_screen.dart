@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../widgets/log_measurement_modal.dart';
+import 'log_measurement_sheet.dart';
 
 // Simple lightweight local model to represent logged vital entries
 class HealthRecord {
@@ -17,7 +17,7 @@ class HealthRecord {
 }
 
 class HealthTrackingScreen extends StatefulWidget {
-  const HealthTrackingScreen({Key? key}) : super(key: key);
+  const HealthTrackingScreen({super.key});
 
   @override
   State<HealthTrackingScreen> createState() => _HealthTrackingScreenState();
@@ -31,7 +31,9 @@ class _HealthTrackingScreenState extends State<HealthTrackingScreen> {
     'Blood Glucose',
     'Weight',
     'Heart Rate',
-    'Vitals'
+    'Water Intake',  
+    'Oxygen Level',  
+    'Temperature'
   ];
 
   // In-memory mock list simulating database records matching image_e7f97b.png
@@ -140,7 +142,7 @@ class _HealthTrackingScreenState extends State<HealthTrackingScreen> {
                           decoration: BoxDecoration(
                             color: isSelected
                                 ? AppColors.primaryGreen
-                                : AppColors.border.withOpacity(0.3),
+                                : AppColors.border.withValues(alpha: 0.3),
                             borderRadius: BorderRadius.circular(20.0),
                           ),
                           alignment: Alignment.center,
@@ -181,12 +183,12 @@ class _HealthTrackingScreenState extends State<HealthTrackingScreen> {
                                 color: AppColors.surface, // Clean crisp white card layout block
                                 borderRadius: BorderRadius.circular(16.0),
                                 border: Border.all(
-                                  color: AppColors.border.withOpacity(0.4),
+                                  color: AppColors.border.withValues(alpha: 0.4),
                                   width: 1.0,
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.02),
+                                    color: Colors.black.withValues(alpha: 0.02),
                                     blurRadius: 8,
                                     offset: const Offset(0, 4),
                                   )
@@ -211,7 +213,7 @@ class _HealthTrackingScreenState extends State<HealthTrackingScreen> {
                                     style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w400,
-                                      color: AppColors.textSecondary.withOpacity(0.8),
+                                      color: AppColors.textSecondary.withValues(alpha: 0.8),
                                     ),
                                   ),
                                 ],
@@ -227,7 +229,7 @@ class _HealthTrackingScreenState extends State<HealthTrackingScreen> {
                             Icon(
                               Icons.show_chart_rounded,
                               size: 72,
-                              color: AppColors.textSecondary.withOpacity(0.3),
+                              color: AppColors.textSecondary.withValues(alpha: 0.3),
                             ),
                             const SizedBox(height: 16),
                             Text(

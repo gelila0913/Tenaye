@@ -5,9 +5,9 @@ class LogMeasurementModal extends StatefulWidget {
   final String initialType;
   
   const LogMeasurementModal({
-    Key? key, 
+    super.key,
     this.initialType = 'Blood Pressure',
-  }) : super(key: key);
+  });
 
   @override
   State<LogMeasurementModal> createState() => _LogMeasurementModalState();
@@ -25,12 +25,6 @@ class _LogMeasurementModalState extends State<LogMeasurementModal> {
     'Weight',
     'Heart Rate'
   ];
-
-  @override
-  void NavajoInit() {
-    super.initState();
-    _selectedType = widget.initialType;
-  }
 
   @override
   void initState() {
@@ -158,7 +152,7 @@ class _LogMeasurementModalState extends State<LogMeasurementModal> {
                     Navigator.of(context).pop();
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryGreen.withOpacity(0.6), // Light structural matching teal tone tint
+                    backgroundColor: AppColors.primaryGreen.withValues(alpha: 0.6), // Light structural matching teal tone tint
                     foregroundColor: AppColors.textLight,
                     elevation: 0,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
@@ -190,7 +184,7 @@ class _LogMeasurementModalState extends State<LogMeasurementModal> {
         hintStyle: const TextStyle(color: AppColors.textSecondary, fontSize: 15),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
         filled: true,
-        fillColor: AppColors.background.withOpacity(0.5),
+        fillColor: AppColors.background.withValues(alpha: 0.5),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.0),
           borderSide: const BorderSide(color: AppColors.border, width: 1),

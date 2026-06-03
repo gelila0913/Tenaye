@@ -1,25 +1,32 @@
 import 'package:flutter/material.dart';
+import 'app.dart';
 import 'core/theme/app_colors.dart';
-import 'features/health_tracking/presentation/screens/health_tracking_screen.dart';
 
 void main() {
-  runApp(const MyApp());
+  // Ensure native bindings are cleanly mapped before building context
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const TenayeCoreRoot());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+class TenayeCoreRoot extends StatelessWidget {
+  const TenayeCoreRoot({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Health Companion',
+      title: 'Tenaye',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
+        useMaterial3: true,
         primaryColor: AppColors.primaryGreen,
         scaffoldBackgroundColor: AppColors.background,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppColors.primaryGreen,
+          surface: AppColors.surface,
+          brightness: Brightness.light, // Set to Brightness.dark if implementing a complete dark-mode theme override
+        ),
       ),
-      // Set the home property directly to your upgraded Health Tracking Screen to test it instantly!
-      home: const HealthTrackingScreen(),
+      home: const TenayeAppWorkspace(),
     );
   }
 }
