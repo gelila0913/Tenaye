@@ -18,7 +18,7 @@ class GreetingHeader extends StatelessWidget {
           bottomRight: Radius.circular(32.0),
         ),
       ),
-      padding: const EdgeInsets.fromLTRB(20.0, 60.0, 20.0, 24.0),
+      padding: const EdgeInsets.fromLTRB(20.0, 45.0, 20.0, 16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -37,11 +37,14 @@ class GreetingHeader extends StatelessWidget {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        Image.asset(
-                          'assets/images/logo.png',
-                          width: 22,
-                          height: 22,
-                          fit: BoxFit.contain,
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(6.0),
+                          child: Image.asset(
+                            'assets/images/logo.jpg',
+                            width: 36,
+                            height: 36,
+                            fit: BoxFit.contain,
+                          ),
                         ),
                         const SizedBox(width: 8),
                         const Text("ጤናዬ — Your Health Companion", style: AppTextStyles.amharicSubtitle),
@@ -78,7 +81,7 @@ class GreetingHeader extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 20),
           
           // Horizontal inline vitals tracker panel segment row
           ValueListenableBuilder<List<HealthRecord>>(

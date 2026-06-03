@@ -27,7 +27,7 @@ class TenayeBrandHeader extends StatelessWidget {
           bottomRight: Radius.circular(24.0),
         ),
       ),
-      padding: const EdgeInsets.fromLTRB(20.0, 50.0, 20.0, 20.0),
+      padding: const EdgeInsets.fromLTRB(20.0, 40.0, 20.0, 12.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -48,13 +48,16 @@ class TenayeBrandHeader extends StatelessWidget {
                       ),
                     ),
                   ],
-                  Image.asset(
-                    'assets/images/logo.png',
-                    width: 32,
-                    height: 32,
-                    fit: BoxFit.contain,
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10.0),
+                    child: Image.asset(
+                      'assets/images/logo.jpg',
+                      width: 52,
+                      height: 52,
+                      fit: BoxFit.contain,
+                    ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 10),
                   const Text(
                     'ጤናዬ',
                     style: TextStyle(
@@ -69,7 +72,7 @@ class TenayeBrandHeader extends StatelessWidget {
               if (trailingWidget != null) trailingWidget,
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           // Page Title
           Text(
             title,
