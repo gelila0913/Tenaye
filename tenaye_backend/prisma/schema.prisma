@@ -1,0 +1,88 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model UserProfile {
+  id                String             @id @default(uuid()) @db.Uuid
+  email             String             @unique
+  age               Int
+  gender            String
+  height            Float
+  weight            Float
+  bloodType         String
+  activityLevel     String
+  budgetRange       String
+  medicalConditions String[]
+  healthGoals       String[]
+  allergies         String[]
+  availableFoods    String[]
+  medications       Medication[]
+  moodLogs          MoodLog[]
+  nutritionPlans    NutritionPlan[]
+  fitnessPlans      FitnessPlan[]
+  emergencyContacts EmergencyContact[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+}
+
+model Medication {
+  id        String      @id @default(uuid()) @db.Uuid
+  userId    String      @db.Uuid
+  user      UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  dosage    String
+  frequency String
+  times     String[]
+  startDate DateTime
+  endDate   DateTime
+  notes     String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model MoodLog {
+  id           String      @id @default(uuid()) @db.Uuid
+  userId       String      @db.Uuid
+  user         UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  selectedMood String
+  energyLevel  Int
+  stressLevel  Int
+  sleepHours   Int
+  notes        String?
+  createdAt    DateTime    @default(now())
+}
+
+model NutritionPlan {
+  id                 String      @id @default(uuid()) @db.Uuid
+  userId             String      @db.Uuid
+  user               UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rawIngredients     String
+  dailyCalorieTarget Int
+  mealScheduleJson   Json
+  createdAt          DateTime    @default(now())
+}
+
+model FitnessPlan {
+  id                   String      @id @default(uuid()) @db.Uuid
+  userId               String      @db.Uuid
+  user                 UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weeklyGoal           String
+  scheduleTimelineJson Json
+  createdAt            DateTime    @default(now())
+}
+
+model EmergencyContact {
+  id          String      @id @default(uuid()) @db.Uuid
+  userId      String      @db.Uuid
+  user        UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  relationship String
+  phoneNumber String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
