@@ -93,7 +93,7 @@ model FitnessPlan {
   id                   String      @id @default(uuid())
   userId               String
   user                 UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
-  weeklyGoal           String
+  weeklyGoal           String      @db.Text
   scheduleTimelineJson Json
   createdAt            DateTime    @default(now())
 }

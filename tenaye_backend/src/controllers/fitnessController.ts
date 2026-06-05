@@ -40,6 +40,7 @@ Strict JSON Enforcement: Force Gemini to return the response strictly as a JSON 
 
 Strict rules:
 1. Do not include any markdown tags (like \`\`\`json), comments, or extra conversational text.
+2. Keep the weeklyGoalSummary concise and punchy, strictly under 150 characters.
 `;
     } else {
       systemPrompt = `You are an expert personal trainer. Create a weekly fitness plan for this user. Their primary goal is: [${selectedGoal}].
@@ -66,6 +67,7 @@ Strict JSON Enforcement: Force Gemini to return the response strictly as a JSON 
 
 Strict rules:
 1. Do not include any markdown tags (like \`\`\`json), comments, or extra conversational text.
+2. Keep the weeklyGoalSummary concise and punchy, strictly under 150 characters.
 `;
     }
 

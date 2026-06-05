@@ -38,6 +38,7 @@ Strict JSON Enforcement: Force Gemini to return the response strictly as a JSON 
 
 Strict rules:
 1. Do not include any markdown tags (like \`\`\`json), comments, or extra conversational text.
+2. Keep the weeklyGoalSummary concise and punchy, strictly under 150 characters.
 `;
         }
         else {
@@ -65,6 +66,7 @@ Strict JSON Enforcement: Force Gemini to return the response strictly as a JSON 
 
 Strict rules:
 1. Do not include any markdown tags (like \`\`\`json), comments, or extra conversational text.
+2. Keep the weeklyGoalSummary concise and punchy, strictly under 150 characters.
 `;
         }
         try {
