@@ -3,6 +3,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/brand_header.dart';
 import '../../../../services/api_client.dart';
 import '../../../../core/constants/api_constants.dart';
+import '../../../../core/utils/profile_controller.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -69,7 +70,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final response = await _apiClient.get('${ApiConstants.profile}/$_userId');
       if (response != null && response['success'] == true) {
-        final data = response['data'];
+        final Map<String, dynamic> data = response['data'] as Map<String, dynamic>;
+        ProfileController.profile.value = data; // Set global profile state
         setState(() {
           _age = data['age'] ?? _age;
           _gender = data['gender'] ?? _gender;
@@ -140,6 +142,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final response = await _apiClient.post(ApiConstants.profile, payload);
       if (response != null && response['success'] == true) {
+        final data = response['data'];
+        ProfileController.profile.value = data as Map<String, dynamic>?; // Update global state
         _showSuccessSnackbar(response['message'] ?? 'Profile saved successfully!');
       }
     } on ApiException catch (e) {

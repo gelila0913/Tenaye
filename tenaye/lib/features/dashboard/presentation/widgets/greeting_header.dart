@@ -4,6 +4,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../emergency_sos/presentation/screens/sos_active_screen.dart';
 
 class GreetingHeader extends StatelessWidget {
+  final String userName;
   final String bloodPressure;
   final String glucose;
   final String weight;
@@ -11,6 +12,7 @@ class GreetingHeader extends StatelessWidget {
 
   const GreetingHeader({
     super.key,
+    required this.userName,
     required this.bloodPressure,
     required this.glucose,
     required this.weight,
@@ -41,9 +43,14 @@ class GreetingHeader extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("Good afternoon,", style: AppTextStyles.greetingSub),
-                    const SizedBox(height: 4),
-                    const Text("Gelila 👋", style: AppTextStyles.greetingName),
+                    Text(
+                      userName.isNotEmpty ? "Good afternoon," : "Good afternoon!",
+                      style: AppTextStyles.greetingSub,
+                    ),
+                    if (userName.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text("$userName 👋", style: AppTextStyles.greetingName),
+                    ],
                     const SizedBox(height: 8),
                     Row(
                       children: [

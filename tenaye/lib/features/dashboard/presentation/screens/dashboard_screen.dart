@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/tab_navigation_controller.dart';
+import '../../../../core/utils/profile_controller.dart';
 import '../../../chat/presentation/screens/chat_assistant_screen.dart';
 import '../widgets/greeting_header.dart';
 import '../widgets/quick_action_grid.dart';
@@ -40,6 +41,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
 
     try {
+      // Fetch user profile globally
+      await ProfileController.loadProfile();
+
       // 1. Fetch metrics history grouped by type
       final metricsUrl = '${ApiConstants.baseUrl}/metrics/history/$_userId';
       final metricsResponse = await _apiClient.get(metricsUrl);
@@ -110,11 +114,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  GreetingHeader(
-                    bloodPressure: _bloodPressure,
-                    glucose: _glucose,
-                    weight: _weight,
-                    isLoading: _isLoading,
+                  ValueListenableBuilder<Map<String, dynamic>?>(
+                    valueListenable: ProfileController.profile,
+                    builder: (context, profileData, child) {
+                      return GreetingHeader(
+                        userName: ProfileController.userName,
+                        bloodPressure: _bloodPressure,
+                        glucose: _glucose,
+                        weight: _weight,
+                        isLoading: _isLoading,
+                      );
+                    },
                   ),
                   Padding(
                     padding: const EdgeInsets.all(20.0),
