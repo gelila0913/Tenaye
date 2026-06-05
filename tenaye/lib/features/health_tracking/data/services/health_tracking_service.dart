@@ -1,14 +1,17 @@
 import 'package:flutter/foundation.dart';
+import 'package:image_picker/image_picker.dart';
 
 class HealthRecord {
   final String type;
   final String displayValue;
   final String timestamp;
+  final XFile? image;
 
   HealthRecord({
     required this.type,
     required this.displayValue,
     required this.timestamp,
+    this.image,
   });
 }
 
@@ -30,7 +33,7 @@ class HealthTrackingService {
 
   List<HealthRecord> get records => List.unmodifiable(_records);
 
-  void addRecord(String type, String value, {String? diastolic}) {
+  void addRecord(String type, String value, {String? diastolic, XFile? image}) {
     String displayValue = value;
     if (type == 'Blood Pressure') {
       displayValue = "$value/${diastolic ?? '80'} mmHg";
@@ -63,6 +66,7 @@ class HealthTrackingService {
       type: type,
       displayValue: displayValue,
       timestamp: formattedTime,
+      image: image,
     );
 
     _records.add(newRecord);

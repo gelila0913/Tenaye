@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../data/services/health_tracking_service.dart';
 
@@ -19,6 +20,21 @@ class _LogMeasurementModalState extends State<LogMeasurementModal> {
   final _valueController = TextEditingController();
   final _diastolicController = TextEditingController();
   final _notesController = TextEditingController();
+  XFile? _pickedImage;
+  final ImagePicker _picker = ImagePicker();
+
+  Future<void> _pickImage() async {
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        setState(() {
+          _pickedImage = image;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error picking image: $e');
+    }
+  }
 
   final List<String> _measurementTypes = [
     'Blood Pressure',
@@ -135,6 +151,9 @@ class _LogMeasurementModalState extends State<LogMeasurementModal> {
                       if (newValue != null) {
                         setState(() {
                           _selectedType = newValue;
+                          if (_selectedType != 'Weight') {
+                            _pickedImage = null;
+                          }
                         });
                       }
                     },
@@ -161,6 +180,52 @@ class _LogMeasurementModalState extends State<LogMeasurementModal> {
               const Text('Notes (optional)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: AppColors.textPrimary)),
               const SizedBox(height: 8),
               _buildInputField(controller: _notesController, hint: 'Any notes...', maxLines: 2),
+              if (_selectedType == 'Weight') ...[
+                const SizedBox(height: 18),
+                const Text('Progress Photo (optional)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: AppColors.textPrimary)),
+                const SizedBox(height: 8),
+                if (_pickedImage == null)
+                  OutlinedButton.icon(
+                    onPressed: _pickImage,
+                    icon: const Icon(Icons.add_a_photo_outlined, color: AppColors.primaryGreen),
+                    label: const Text('Add Progress Photo', style: TextStyle(color: AppColors.primaryGreen)),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.primaryGreen, width: 1.2),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                    ),
+                  )
+                else
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                    decoration: BoxDecoration(
+                      color: AppColors.background.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(12.0),
+                      border: Border.all(color: AppColors.border, width: 1),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.photo_outlined, color: AppColors.primaryGreen),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _pickedImage!.name,
+                            style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.cancel, color: Colors.redAccent),
+                          onPressed: () {
+                            setState(() {
+                              _pickedImage = null;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
               const SizedBox(height: 24),
 
               // Primary Action Save Action Button
@@ -176,6 +241,7 @@ class _LogMeasurementModalState extends State<LogMeasurementModal> {
                         diastolic: _diastolicController.text.trim().isEmpty 
                             ? null 
                             : _diastolicController.text.trim(),
+                        image: _pickedImage,
                       );
                       Navigator.of(context).pop();
                     }
