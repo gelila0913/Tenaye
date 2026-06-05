@@ -11,6 +11,7 @@ class AddMedicationModal extends StatefulWidget {
 }
 
 class _AddMedicationModalState extends State<AddMedicationModal> {
+  bool _isSaving = false;
   String _selectedFrequency = 'Once daily';
   final List<String> _frequencies = ['Once daily', 'Twice daily', 'Three times daily', 'As needed', 'Every other day'];
 
@@ -210,29 +211,51 @@ class _AddMedicationModalState extends State<AddMedicationModal> {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: () {
-                    if (_nameController.text.trim().isNotEmpty) {
-                      final timeList = _timesController.text
-                          .split(',')
-                          .map((e) => e.trim())
-                          .where((e) => e.isNotEmpty)
-                          .toList();
+                  onPressed: _isSaving
+                      ? null
+                      : () async {
+                          if (_nameController.text.trim().isNotEmpty) {
+                            setState(() {
+                              _isSaving = true;
+                            });
 
-                      final newMed = Medication(
-                        id: DateTime.now().millisecondsSinceEpoch.toString(),
-                        name: _nameController.text.trim(),
-                        dosage: _dosageController.text.trim(),
-                        frequency: _selectedFrequency,
-                        times: timeList.isEmpty ? ['08:00'] : timeList,
-                        startDate: _startDate,
-                        endDate: _endDate,
-                        notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
-                      );
+                            final timeList = _timesController.text
+                                .split(',')
+                                .map((e) => e.trim())
+                                .where((e) => e.isNotEmpty)
+                                .toList();
 
-                      MedicationService().addMedication(newMed);
-                      Navigator.pop(context);
-                    }
-                  },
+                            final newMed = Medication(
+                              id: DateTime.now().millisecondsSinceEpoch.toString(),
+                              name: _nameController.text.trim(),
+                              dosage: _dosageController.text.trim(),
+                              frequency: _selectedFrequency,
+                              times: timeList.isEmpty ? ['08:00'] : timeList,
+                              startDate: _startDate,
+                              endDate: _endDate,
+                              notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+                            );
+
+                            try {
+                              await MedicationService().addMedication(newMed);
+                              if (mounted) {
+                                Navigator.pop(context);
+                              }
+                            } catch (e) {
+                              setState(() {
+                                _isSaving = false;
+                              });
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Failed to add medication: $e'),
+                                    backgroundColor: AppColors.emergencyRed,
+                                  ),
+                                );
+                              }
+                            }
+                          }
+                        },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryGreen,
                     foregroundColor: Colors.white,
@@ -241,10 +264,19 @@ class _AddMedicationModalState extends State<AddMedicationModal> {
                       borderRadius: BorderRadius.circular(12.0),
                     ),
                   ),
-                  child: const Text(
-                    'Add Medication',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
+                  child: _isSaving
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'Add Medication',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
                 ),
               ),
             ],

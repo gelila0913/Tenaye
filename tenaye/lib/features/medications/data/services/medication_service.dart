@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import '../../../../core/constants/api_constants.dart';
+import '../../../../services/api_client.dart';
 import '../models/medication_model.dart';
 
 class MedicationService {
@@ -8,11 +10,15 @@ class MedicationService {
   factory MedicationService() => _instance;
   MedicationService._internal();
 
+  final ApiClient _apiClient = ApiClient();
+  final String _userId = 'c2fdb290-8e68-458f-a984-01be63b964cd';
+
   // Internal storage
   final List<Medication> _medications = [];
 
-  // Public ValueNotifier to broadcast changes to the UI
+  // Public ValueNotifiers to broadcast changes to the UI
   final ValueNotifier<List<Medication>> medicationsNotifier = ValueNotifier<List<Medication>>([]);
+  final ValueNotifier<bool> isLoading = ValueNotifier<bool>(false);
 
   // Alarm Callback hooks
   void Function(Medication medication, String scheduledTime)? onAlarmTriggered;
@@ -26,14 +32,54 @@ class MedicationService {
 
   List<Medication> get medications => List.unmodifiable(_medications);
 
-  void addMedication(Medication medication) {
-    _medications.add(medication);
-    _notifyListeners();
+  Future<void> loadMedications() async {
+    isLoading.value = true;
+    try {
+      final response = await _apiClient.get('${ApiConstants.medications}/active/$_userId');
+      if (response != null && response['data'] != null) {
+        final List<dynamic> data = response['data'] as List<dynamic>;
+        _medications.clear();
+        _medications.addAll(data.map((item) => Medication.fromJson(item as Map<String, dynamic>)));
+        _notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error loading medications: $e');
+    } finally {
+      isLoading.value = false;
+    }
   }
 
-  void removeMedication(String id) {
-    _medications.removeWhere((med) => med.id == id);
-    _notifyListeners();
+  Future<void> addMedication(Medication medication) async {
+    isLoading.value = true;
+    try {
+      final Map<String, dynamic> body = medication.toJson();
+      body['userId'] = _userId;
+      final response = await _apiClient.post(ApiConstants.medications, body);
+      if (response != null && response['success'] == true) {
+        await loadMedications();
+      }
+    } catch (e) {
+      debugPrint('Error adding medication: $e');
+      rethrow;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> removeMedication(String id) async {
+    isLoading.value = true;
+    try {
+      final response = await _apiClient.delete('${ApiConstants.medications}/$id');
+      if (response != null && response['success'] == true) {
+        _medications.removeWhere((med) => med.id == id);
+        _notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error deleting medication: $e');
+      rethrow;
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   void toggleAlarm(String id) {

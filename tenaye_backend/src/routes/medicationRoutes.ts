@@ -10,4 +10,10 @@ router.post('/', asyncWrapper(MedicationController.addMedication));
 // GET /api/medications/active/:userId
 router.get('/active/:userId', asyncWrapper(MedicationController.getActiveMedications));
 
+// PUT /api/medications/:id
+router.put('/:id', asyncWrapper(MedicationController.updateMedication));
+
+// DELETE /api/medications/:id
+router.delete('/:id', asyncWrapper(MedicationController.deleteMedication));
+
 export default router;

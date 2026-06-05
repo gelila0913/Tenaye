@@ -117,4 +117,75 @@ export class MedicationController {
       data: activeMedications,
     });
   }
+
+  /**
+   * Update a medication (PUT /api/medications/:id)
+   */
+  static async updateMedication(req: Request, res: Response) {
+    const { id } = req.params;
+    const { name, dosage, frequency, times, startDate, endDate, notes } = req.body;
+
+    const medication = await prisma.medication.findUnique({
+      where: { id },
+    });
+
+    if (!medication) {
+      res.status(404).json({
+        success: false,
+        error: 'NotFoundError',
+        message: `Medication with ID ${id} was not found.`,
+      });
+      return;
+    }
+
+    const data: any = {};
+    if (name !== undefined) data.name = name;
+    if (dosage !== undefined) data.dosage = dosage;
+    if (frequency !== undefined) data.frequency = frequency;
+    if (times !== undefined) data.times = safeParseJson(times);
+    if (startDate !== undefined) data.startDate = new Date(startDate);
+    if (endDate !== undefined) data.endDate = new Date(endDate);
+    if (notes !== undefined) data.notes = notes || null;
+
+    const updatedMedication = await prisma.medication.update({
+      where: { id },
+      data,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Medication updated successfully',
+      data: updatedMedication,
+    });
+  }
+
+  /**
+   * Delete a medication (DELETE /api/medications/:id)
+   */
+  static async deleteMedication(req: Request, res: Response) {
+    const { id } = req.params;
+
+    const medication = await prisma.medication.findUnique({
+      where: { id },
+    });
+
+    if (!medication) {
+      res.status(404).json({
+        success: false,
+        error: 'NotFoundError',
+        message: `Medication with ID ${id} was not found.`,
+      });
+      return;
+    }
+
+    await prisma.medication.delete({
+      where: { id },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Medication deleted successfully',
+    });
+  }
 }
+
