@@ -12,8 +12,11 @@ class ProfileController {
   static const String _userId = 'c2fdb290-8e68-458f-a984-01be63b964cd';
   static final ApiClient _apiClient = ApiClient();
 
-  /// Parse and format a clean display name from user's email address
+  /// Parse and format a clean display name from user's email address or name field
   static String get userName {
+    final name = profile.value?['name']?.toString() ?? '';
+    if (name.isNotEmpty) return name;
+
     final email = profile.value?['email']?.toString() ?? '';
     if (email.isEmpty) return '';
     

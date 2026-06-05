@@ -45,6 +45,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final List<String> _foods = ['injera', 'egg', 'rice', 'pasta', 'vegetables'];
 
   // Form input controllers
+  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _allergyController = TextEditingController();
   final TextEditingController _foodController = TextEditingController();
 
@@ -56,6 +57,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   void dispose() {
+    _nameController.dispose();
     _allergyController.dispose();
     _foodController.dispose();
     super.dispose();
@@ -73,6 +75,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final Map<String, dynamic> data = response['data'] as Map<String, dynamic>;
         ProfileController.profile.value = data; // Set global profile state
         setState(() {
+          _nameController.text = data['name']?.toString() ?? '';
           _age = data['age'] ?? _age;
           _gender = data['gender'] ?? _gender;
           _height = (data['height'] as num?)?.toInt() ?? _height;
@@ -126,6 +129,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final payload = {
       'id': _userId,
       'email': _userEmail,
+      'name': _nameController.text.trim(),
       'age': _age,
       'gender': _gender,
       'height': _height,
@@ -191,7 +195,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               // Unified Brand Header Bar
               TenayeBrandHeader(
                 title: 'Health Profile',
-                subtitle: _userEmail,
+                subtitle: '',
                 trailing: IconButton(
                   icon: const Icon(Icons.logout_rounded, color: Colors.white),
                   tooltip: 'Logout',
@@ -211,6 +215,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         title: 'Basic Information',
                         child: Column(
                           children: [
+                            _buildTextField('Full Name', 'Enter your full name', _nameController),
+                            const SizedBox(height: 16),
                             Row(
                               children: [
                                 Expanded(child: _buildNumericField('Age', _age, (val) => setState(() => _age = val))),
@@ -554,6 +560,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
       labelStyle: const TextStyle(color: AppColors.primaryGreen, fontSize: 14, fontWeight: FontWeight.w500),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0), side: BorderSide.none),
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    );
+  }
+
+  Widget _buildTextField(String label, String hint, TextEditingController controller) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 44,
+          child: TextField(
+            controller: controller,
+            style: const TextStyle(color: AppColors.textPrimary, fontSize: 15),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: const BorderSide(color: AppColors.border)),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: const BorderSide(color: AppColors.primaryGreen)),
+            ),
+          ),
+        )
+      ],
     );
   }
 }

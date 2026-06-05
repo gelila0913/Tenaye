@@ -10,6 +10,7 @@ generator client {
 model UserProfile {
   id                String              @id @default(uuid())
   email             String              @unique
+  name              String?
   age               Int
   gender            String
   height            Float

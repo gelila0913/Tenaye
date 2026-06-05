@@ -3,6 +3,7 @@ import { prisma } from '../../config/database';
 export class ProfileService {
   static async createProfile(data: {
     email: string;
+    name?: string;
     age: number;
     gender: string;
     height: number;
@@ -36,6 +37,7 @@ export class ProfileService {
     id: string,
     data: {
       email?: string;
+      name?: string;
       age?: number;
       gender?: string;
       height?: number;

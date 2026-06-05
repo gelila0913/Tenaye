@@ -22,6 +22,7 @@ export class ProfileController {
     const {
       id,
       email,
+      name,
       age,
       gender,
       height,
@@ -65,6 +66,7 @@ export class ProfileController {
 
     const updateData: any = {};
     if (email !== undefined) updateData.email = email;
+    if (name !== undefined) updateData.name = name;
     if (parsedAge !== undefined && !isNaN(parsedAge)) updateData.age = parsedAge;
     if (gender !== undefined) updateData.gender = gender;
     if (parsedHeight !== undefined && !isNaN(parsedHeight)) updateData.height = parsedHeight;
@@ -111,6 +113,7 @@ export class ProfileController {
         data: {
           id: id || undefined,
           email,
+          name: name || undefined,
           age: parsedAge,
           gender,
           height: parsedHeight,

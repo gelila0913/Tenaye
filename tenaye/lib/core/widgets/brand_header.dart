@@ -82,15 +82,17 @@ class TenayeBrandHeader extends StatelessWidget {
               color: Colors.white,
             ),
           ),
-          const SizedBox(height: 4),
-          // Page Subtitle
-          Text(
-            subtitle,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.white.withValues(alpha: 0.85),
+          if (subtitle.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            // Page Subtitle
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.white.withValues(alpha: 0.85),
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
