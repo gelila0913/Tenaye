@@ -8,4 +8,7 @@ const router = Router();
 // POST /api/chat
 router.post('/', contextSynthesizer, asyncWrapper(ChatController.chatWithCompanion));
 
+// GET /api/chat/history/:userId
+router.get('/history/:userId', asyncWrapper(ChatController.getChatHistory));
+
 export default router;

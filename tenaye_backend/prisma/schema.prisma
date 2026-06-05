@@ -28,6 +28,7 @@ model UserProfile {
   emergencyContacts EmergencyContact[]
   weightLogs        WeightLog[]
   healthMetrics     HealthMeasurement[]
+  chatMessages      ChatMessage[]
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
 }
@@ -106,4 +107,13 @@ model EmergencyContact {
   phoneNumber  String
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
+}
+
+model ChatMessage {
+  id        String      @id @default(uuid())
+  userId    String
+  user      UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String      // 'user' or 'ai'
+  content   String      @db.Text
+  createdAt DateTime    @default(now())
 }

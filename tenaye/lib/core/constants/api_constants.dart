@@ -1,6 +1,6 @@
 class ApiConstants {
   // Base URL pointing to Node.js backend on host machine (localhost:3000 mapped to emulator loopback 10.0.2.2)
-  static const String baseUrl = 'http://10.0.2.2:3000/api';
+  static const String baseUrl = 'http://localhost:3000/api';
 
   // Endpoint constants
   static const String profile = '$baseUrl/profile';
