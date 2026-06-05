@@ -1,7 +1,9 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
 import { errorHandler } from './middlewares/errorHandler';
-import profileRouter from './modules/profile/routes';
+import profileRouter from './routes/profileRoutes';
+import weightRouter from './routes/weightRoutes';
 import medicationsRouter from './modules/medications/routes';
 import moodRouter from './modules/mood/routes';
 import nutritionRouter from './modules/nutrition/routes';
@@ -14,8 +16,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Serve uploaded progress photos
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
 // API Feature Module Endpoints Routing
 app.use('/api/profile', profileRouter);
+app.use('/api/weight', weightRouter);
 app.use('/api/medications', medicationsRouter);
 app.use('/api/mood', moodRouter);
 app.use('/api/nutrition', nutritionRouter);
@@ -23,7 +29,7 @@ app.use('/api/fitness', fitnessRouter);
 app.use('/api/sos', sosRouter);
 
 // Basic Sandbox Health Check Verification Anchor
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
   res.status(200).json({
     success: true,
     status: 'UP',
