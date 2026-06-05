@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../../../core/constants/api_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/brand_header.dart';
+import '../../../../services/api_client.dart';
 
 class FitnessScreen extends StatefulWidget {
   const FitnessScreen({Key? key}) : super(key: key);
@@ -10,25 +12,75 @@ class FitnessScreen extends StatefulWidget {
 }
 
 class _FitnessScreenState extends State<FitnessScreen> {
+  final ApiClient _apiClient = ApiClient();
+  final String _userId = 'c2fdb290-8e68-458f-a984-01be63b964cd';
+
   bool _isPlanGenerated = false;
+  bool _isLoading = false;
+  String _selectedGoal = 'Maintain Health';
+  String _weeklyGoalSummary = '';
+  List<dynamic> _days = [];
 
   // Tracking completion state for each workout day
-  final Map<String, bool> _completedDays = {
-    'Mon': false,
-    'Tue': false,
-    'Wed': false,
-    'Fri': false,
-    'Sat': false,
-  };
+  final Map<String, bool> _completedDays = {};
 
   // Tracking expansion state for each workout day
-  final Map<String, bool> _expandedDays = {
-    'Mon': true, // Open Monday by default to showcase exercise sub-cards
-    'Tue': false,
-    'Wed': false,
-    'Fri': false,
-    'Sat': false,
-  };
+  final Map<String, bool> _expandedDays = {};
+
+  Future<void> _generateWeeklyWorkouts() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final response = await _apiClient.post(
+        '${ApiConstants.baseUrl}/fitness/generate',
+        {
+          'userId': _userId,
+          'goal': _selectedGoal,
+        },
+      );
+
+      if (response != null && response['success'] == true) {
+        final data = response['data'] ?? {};
+        final String summary = data['weeklyGoalSummary'] ?? _selectedGoal;
+        final List<dynamic> daysList = data['days'] ?? [];
+
+        setState(() {
+          _weeklyGoalSummary = summary;
+          _days = daysList;
+          _isPlanGenerated = true;
+
+          // Dynamically map expand and completion states
+          _expandedDays.clear();
+          _completedDays.clear();
+          for (int i = 0; i < _days.length; i++) {
+            final day = _days[i];
+            final String dayLabel = day['dayLabel'] ?? 'Day';
+            _expandedDays[dayLabel] = (i == 0); // expand first day by default
+            _completedDays[dayLabel] = false;
+          }
+        });
+      } else {
+        throw Exception(response?['message'] ?? 'Could not generate workouts.');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to generate fitness plan: $e'),
+            backgroundColor: AppColors.emergencyRed,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,11 +102,18 @@ class _FitnessScreenState extends State<FitnessScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 20.0),
               child: Column(
                 children: [
-                  // Trigger Action Control Panel Bar
-                  _buildActionButtonHub(),
+                  // Trigger Action Control Panel Card
+                  _buildActionCard(),
                   const SizedBox(height: 20),
 
-                  if (_isPlanGenerated) ...[
+                  if (_isLoading) ...[
+                    const SizedBox(height: 100),
+                    const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primaryGreen,
+                      ),
+                    ),
+                  ] else if (_isPlanGenerated) ...[
                     // Weekly Focus Strategy Summary Box
                     _buildWeeklyGoalCard(),
                     const SizedBox(height: 16),
@@ -76,7 +135,7 @@ class _FitnessScreenState extends State<FitnessScreen> {
                     ),
                     const SizedBox(height: 16),
                     const Text(
-                      'Tap button to construct your custom training regimen',
+                      'Select a goal to construct your custom training regimen',
                       style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
                     ),
                   ],
@@ -89,17 +148,99 @@ class _FitnessScreenState extends State<FitnessScreen> {
     );
   }
 
+  Widget _buildActionCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20.0),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20.0),
+        border: Border.all(color: AppColors.border.withOpacity(0.4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildGoalSelector(),
+          const SizedBox(height: 16),
+          _buildActionButtonHub(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGoalSelector() {
+    final List<String> goals = ['Lose Weight', 'Gain Muscle', 'Maintain Health'];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Select Fitness Goal',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: goals.map((goal) {
+            final isSelected = _selectedGoal == goal;
+            return Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                child: ChoiceChip(
+                  label: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      goal,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: isSelected ? Colors.white : AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  selected: isSelected,
+                  selectedColor: AppColors.primaryGreen,
+                  backgroundColor: AppColors.surface,
+                  checkmarkColor: Colors.white,
+                  showCheckmark: false,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                    side: BorderSide(
+                      color: isSelected ? AppColors.primaryGreen : AppColors.border,
+                    ),
+                  ),
+                  onSelected: _isLoading
+                      ? null
+                      : (bool selected) {
+                          if (selected) {
+                            setState(() {
+                              _selectedGoal = goal;
+                            });
+                          }
+                        },
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
   Widget _buildActionButtonHub() {
     return SizedBox(
       width: double.infinity,
       height: 48,
       child: ElevatedButton.icon(
-        onPressed: () {
-          setState(() {
-            _isPlanGenerated = true;
-          });
-        },
-        icon: const Icon(Icons.sync_rounded, size: 18, color: Colors.white),
+        onPressed: _isLoading ? null : _generateWeeklyWorkouts,
+        icon: Icon(
+          _isPlanGenerated ? Icons.sync_rounded : Icons.fitness_center_rounded,
+          size: 18,
+          color: Colors.white,
+        ),
         label: Text(
           _isPlanGenerated ? 'Regenerate Plan' : 'Generate Workouts Plan',
           style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
@@ -126,8 +267,8 @@ class _FitnessScreenState extends State<FitnessScreen> {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
-          Text(
+        children: [
+          const Text(
             'WEEKLY GOAL',
             style: TextStyle(
               fontSize: 11,
@@ -136,10 +277,10 @@ class _FitnessScreenState extends State<FitnessScreen> {
               letterSpacing: 0.5,
             ),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(
-            'Gain muscle, improve sleep, reduce stress, increase energy, and better nutrition.',
-            style: TextStyle(
+            _weeklyGoalSummary,
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: AppColors.textPrimary,
@@ -153,25 +294,41 @@ class _FitnessScreenState extends State<FitnessScreen> {
 
   Widget _buildScheduleTimeline() {
     return Column(
-      children: [
-        _buildWorkoutCard('Mon', 'Strength Training', '60min · 4 exercises', true),
-        const SizedBox(height: 12),
-        _buildWorkoutCard('Tue', 'Cardio and Flexibility', '45min · 2 exercises', false),
-        const SizedBox(height: 12),
-        _buildWorkoutCard('Wed', 'Strength Training', '60min · 4 exercises', false),
-        const SizedBox(height: 12),
-        _buildRestDayCard('Thu'),
-        const SizedBox(height: 12),
-        _buildWorkoutCard('Fri', 'Strength & Core', '60min · 4 exercises', false),
-        const SizedBox(height: 12),
-        _buildWorkoutCard('Sat', 'Cardio & Nutrition Focus', '45min · 2 exercises', false),
-        const SizedBox(height: 12),
-        _buildRestDayCard('Sun'),
-      ],
+      children: _days.map<Widget>((day) {
+        final String dayLabel = day['dayLabel'] ?? '';
+        final String title = day['title'] ?? '';
+        final String duration = day['duration'] ?? '';
+        final int totalExercises = day['totalExercises'] ?? 0;
+        final List<dynamic> exercises = day['exercises'] ?? [];
+
+        final bool isRestDay = exercises.isEmpty || title.toLowerCase().contains('rest');
+
+        if (isRestDay) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12.0),
+            child: _buildRestDayCard(dayLabel),
+          );
+        }
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12.0),
+          child: _buildWorkoutCard(
+            dayLabel,
+            title,
+            "$duration · $totalExercises exercise${totalExercises == 1 ? '' : 's'}",
+            exercises: exercises,
+          ),
+        );
+      }).toList(),
     );
   }
 
-  Widget _buildWorkoutCard(String tag, String title, String meta, bool standardHasDetails) {
+  Widget _buildWorkoutCard(
+    String tag,
+    String title,
+    String meta, {
+    List<dynamic> exercises = const [],
+  }) {
     bool isCompleted = _completedDays[tag] ?? false;
     bool isExpanded = _expandedDays[tag] ?? false;
 
@@ -256,17 +413,19 @@ class _FitnessScreenState extends State<FitnessScreen> {
               ),
             ),
 
-            if (isExpanded && standardHasDetails)
+            if (isExpanded)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
                 child: Column(
                   children: [
                     const Divider(height: 1, color: AppColors.border),
                     const SizedBox(height: 12),
-                    _buildExerciseSubItem('Squats', '3 sets', '12-15 reps'),
-                    _buildExerciseSubItem('Push-ups', '3 sets', '8-12 reps (modify as needed)'),
-                    _buildExerciseSubItem('Dumbbell Bent-over Rows', '3 sets', '10-12 reps per arm'),
-                    _buildExerciseSubItem('Plank', '3 sets', 'Hold for 30-45 seconds'),
+                    ...exercises.map((ex) {
+                      final String exName = ex['name'] ?? '';
+                      final int sets = ex['sets'] ?? 3;
+                      final String reps = ex['reps'] ?? '';
+                      return _buildExerciseSubItem(exName, "$sets sets", reps);
+                    }).toList(),
                   ],
                 ),
               ),

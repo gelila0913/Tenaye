@@ -10,63 +10,104 @@ export class FitnessController {
   static async generateFitnessPlan(req: ContextRequest, res: Response) {
     const userContext = req.userContext;
     const profile = req.userProfile;
-    const { weeklyFocus } = req.body;
+    const { goal } = req.body;
 
-    if (!profile || !userContext) {
-      return res.status(500).json({
-        success: false,
-        error: 'ServerError',
-        message: 'User context was not synthesized correctly.',
-      });
-    }
+    const selectedGoal = goal || 'Maintain Health';
 
-    const systemPrompt = `
-You are a highly skilled professional fitness coach and personal trainer. Your task is to generate a personalized weekly exercise calendar.
-Generate a strictly structured JSON object adhering to the user's profile context.
+    let systemPrompt = '';
+    if (profile && userContext) {
+      systemPrompt = `You are an expert personal trainer. Create a weekly fitness plan for this user. Their primary goal is: [${selectedGoal}]. Here is their medical and physical context: [${userContext}]. Ensure the workouts are safe for their specific conditions.
 
-Strict rules:
-1. Match the exercise intensity, types of movements, and workout duration to the user's activity tier and health goals.
-2. Carefully avoid any movements that would aggravate or conflict with the user's medical conditions.
-3. Incorporate the user's optional weekly focus if provided: "${weeklyFocus || 'None'}".
-4. Your output MUST be a valid JSON object matching this schema exactly:
+Strict JSON Enforcement: Force Gemini to return the response strictly as a JSON object matching the frontend UI requirements. The schema MUST be:
 {
-  "weeklyGoal": "Overall summary of the focus of the weekly exercises",
-  "timeline": [
+  "weeklyGoalSummary": "Your customized summary here",
+  "days": [
     {
-      "day": "Monday",
-      "workoutType": "Aerobic / Strength / Flexibility / etc",
-      "durationMinutes": <integer>,
+      "dayLabel": "Mon",
+      "title": "Strength Training",
+      "duration": "60min",
+      "totalExercises": 4,
       "exercises": [
-        { "name": "Exercise name", "sets": <integer>, "reps": "number of reps or time duration, e.g., 12 reps or 45 seconds", "instructions": "Short tip or safety instruction" }
+        {
+          "name": "Squats",
+          "sets": 3,
+          "reps": "12-15 reps"
+        }
       ]
     }
   ]
 }
-5. Do not include any markdown tags (like \`\`\`json), comments, or extra conversational text.
+
+Strict rules:
+1. Do not include any markdown tags (like \`\`\`json), comments, or extra conversational text.
 `;
+    } else {
+      systemPrompt = `You are an expert personal trainer. Create a weekly fitness plan for this user. Their primary goal is: [${selectedGoal}].
+
+Strict JSON Enforcement: Force Gemini to return the response strictly as a JSON object matching the frontend UI requirements. The schema MUST be:
+{
+  "weeklyGoalSummary": "Your customized summary here",
+  "days": [
+    {
+      "dayLabel": "Mon",
+      "title": "Strength Training",
+      "duration": "60min",
+      "totalExercises": 4,
+      "exercises": [
+        {
+          "name": "Squats",
+          "sets": 3,
+          "reps": "12-15 reps"
+        }
+      ]
+    }
+  ]
+}
+
+Strict rules:
+1. Do not include any markdown tags (like \`\`\`json), comments, or extra conversational text.
+`;
+    }
 
     try {
-      const resultText = await AIService.generateText(userContext, {
+      const promptInput = userContext || `Create a weekly workout plan for goal: ${selectedGoal}`;
+      const resultText = await AIService.generateText(promptInput, {
         systemInstruction: systemPrompt,
         responseMimeType: 'application/json',
       });
 
       const jsonResult = JSON.parse(resultText);
 
-      // Save plan to database
-      const plan = await prisma.fitnessPlan.create({
-        data: {
-          userId: profile.id,
-          weeklyGoal: jsonResult.weeklyGoal || weeklyFocus || 'Weekly Routine',
-          scheduleTimelineJson: jsonResult.timeline || jsonResult,
-        },
-      });
+      if (profile) {
+        // Save plan to database for registered user
+        const plan = await prisma.fitnessPlan.create({
+          data: {
+            userId: profile.id,
+            weeklyGoal: jsonResult.weeklyGoalSummary || selectedGoal,
+            scheduleTimelineJson: jsonResult,
+          },
+        });
 
-      return res.status(201).json({
-        success: true,
-        message: 'Fitness plan generated successfully',
-        data: plan,
-      });
+        return res.status(201).json({
+          success: true,
+          message: 'Fitness plan generated successfully',
+          data: {
+            ...plan,
+            weeklyGoalSummary: jsonResult.weeklyGoalSummary || selectedGoal,
+            days: jsonResult.days || [],
+          },
+        });
+      } else {
+        // Return dynamic plan to guest user without database write
+        return res.status(200).json({
+          success: true,
+          message: 'Fitness plan generated successfully',
+          data: {
+            weeklyGoalSummary: jsonResult.weeklyGoalSummary || selectedGoal,
+            days: jsonResult.days || [],
+          },
+        });
+      }
     } catch (error: any) {
       console.error('Failed to generate fitness plan:', error);
       return res.status(500).json({

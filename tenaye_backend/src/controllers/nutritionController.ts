@@ -11,78 +11,105 @@ export class NutritionController {
     const userContext = req.userContext;
     const profile = req.userProfile;
 
-    if (!profile || !userContext) {
-      return res.status(500).json({
-        success: false,
-        error: 'ServerError',
-        message: 'User context was not synthesized correctly.',
-      });
+    const { availableFoods } = req.body;
+    let foodsInputStr = '';
+    if (typeof availableFoods === 'string') {
+      foodsInputStr = availableFoods.trim();
     }
 
-    // Format available foods list
-    let availableFoodsStr = '';
-    if (Array.isArray(profile.availableFoods)) {
-      availableFoodsStr = profile.availableFoods.join(', ');
-    } else if (typeof profile.availableFoods === 'string') {
-      try {
-        const parsed = JSON.parse(profile.availableFoods);
-        if (Array.isArray(parsed)) {
-          availableFoodsStr = parsed.join(', ');
-        } else {
-          availableFoodsStr = profile.availableFoods;
-        }
-      } catch {
-        availableFoodsStr = profile.availableFoods;
-      }
-    }
+    const finalFoodsStr = foodsInputStr || '';
 
-    const systemPrompt = `
-You are a highly skilled clinical dietitian. Your task is to generate a personalized daily nutrition and meal plan.
-Generate a strictly structured JSON object adhering to the user's profile context.
+    let systemPrompt = '';
+    if (profile && userContext) {
+      systemPrompt = `You are Tenaye. Use the following patient context to inform all advice. If the context is empty, give general advice.
+
+${userContext}
+
+You are an expert nutritionist. Create a daily meal plan using ONLY the following available foods provided by the user: [${finalFoodsStr}], plus basic pantry staples like salt, oil, and spices. If the user provides no foods, create a standard balanced meal plan.
+
+Strict JSON Enforcement: Force Gemini to return the response strictly as a JSON object that exactly matches our frontend UI needs. The JSON schema MUST be:
+{
+  "dailyTargetCalories": 2200,
+  "meals": [
+    {
+      "type": "Breakfast",
+      "time": "8:00 AM",
+      "calories": 600,
+      "foods": ["Item 1", "Item 2"],
+      "nutrients": "Protein: 30g, Carbs: 50g, Fats: 20g",
+      "preparation": "Step by step instructions"
+    }
+  ]
+}
 
 Strict rules:
-1. You must design the meal plan utilizing ONLY the user's available foods. Do not introduce any ingredients that are not in the available foods list or that conflict with the user's allergies.
-2. The available foods list is: [${availableFoodsStr}]. If this list is empty, fallback to basic healthy ingredients that are compatible with the user's goals and allergies.
-3. Your output MUST be a valid JSON object matching this schema exactly:
-{
-  "dailyCalorieTarget": <integer>,
-  "mealSchedule": {
-    "breakfast": { "meals": ["detailed meal descriptions"], "calories": <int>, "nutrients": "primary nutrients description" },
-    "lunch": { "meals": ["detailed meal descriptions"], "calories": <int>, "nutrients": "primary nutrients description" },
-    "dinner": { "meals": ["detailed meal descriptions"], "calories": <int>, "nutrients": "primary nutrients description" },
-    "snacks": { "meals": ["detailed meal descriptions"], "calories": <int>, "nutrients": "primary nutrients description" }
-  },
-  "dietaryAdvice": ["general piece of advice 1", "general piece of advice 2"]
-}
-4. Do not include any markdown tags (like \`\`\`json), comments, or extra conversational text.
+1. Do not include any markdown tags (like \`\`\`json), comments, or extra conversational text.
 `;
+    } else {
+      systemPrompt = `You are an expert nutritionist. Create a daily meal plan using ONLY the following available foods provided by the user: [${finalFoodsStr}], plus basic pantry staples like salt, oil, and spices. If the user provides no foods, create a standard balanced meal plan.
+
+Strict JSON Enforcement: Force Gemini to return the response strictly as a JSON object that exactly matches our frontend UI needs. The JSON schema MUST be:
+{
+  "dailyTargetCalories": 2200,
+  "meals": [
+    {
+      "type": "Breakfast",
+      "time": "8:00 AM",
+      "calories": 600,
+      "foods": ["Item 1", "Item 2"],
+      "nutrients": "Protein: 30g, Carbs: 50g, Fats: 20g",
+      "preparation": "Step by step instructions"
+    }
+  ]
+}
+
+Strict rules:
+1. Do not include any markdown tags (like \`\`\`json), comments, or extra conversational text.
+`;
+    }
 
     try {
-      const resultText = await AIService.generateText(userContext, {
+      const promptInput = userContext || finalFoodsStr || 'daily meal plan';
+      const resultText = await AIService.generateText(promptInput, {
         systemInstruction: systemPrompt,
         responseMimeType: 'application/json',
       });
 
       const jsonResult = JSON.parse(resultText);
+      const calorieTarget = Math.round(Number(jsonResult.dailyTargetCalories)) || 2200;
 
-      // Save plan to database
-      const plan = await prisma.nutritionPlan.create({
-        data: {
-          userId: profile.id,
-          rawIngredients: availableFoodsStr || 'None',
-          dailyCalorieTarget: jsonResult.dailyCalorieTarget || 2000,
-          mealScheduleJson: jsonResult.mealSchedule || jsonResult,
-        },
-      });
+      if (profile) {
+        // Save plan to database for registered user
+        const plan = await prisma.nutritionPlan.create({
+          data: {
+            userId: profile.id,
+            rawIngredients: finalFoodsStr || 'None',
+            dailyCalorieTarget: calorieTarget,
+            mealScheduleJson: jsonResult,
+          },
+        });
 
-      return res.status(201).json({
-        success: true,
-        message: 'Meal plan generated successfully',
-        data: {
-          ...plan,
-          dietaryAdvice: jsonResult.dietaryAdvice || [],
-        },
-      });
+        return res.status(201).json({
+          success: true,
+          message: 'Meal plan generated successfully',
+          data: {
+            ...plan,
+            dailyTargetCalories: calorieTarget,
+            meals: jsonResult.meals || [],
+          },
+        });
+      } else {
+        // Return dynamic plan to guest user without database write
+        return res.status(200).json({
+          success: true,
+          message: 'Meal plan generated successfully',
+          data: {
+            rawIngredients: finalFoodsStr || 'None',
+            dailyTargetCalories: calorieTarget,
+            meals: jsonResult.meals || [],
+          },
+        });
+      }
     } catch (error: any) {
       console.error('Failed to generate nutrition plan:', error);
       return res.status(500).json({

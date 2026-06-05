@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../../../core/constants/api_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/brand_header.dart';
+import '../../../../services/api_client.dart';
 
 class NutritionScreen extends StatefulWidget {
   const NutritionScreen({Key? key}) : super(key: key);
@@ -11,21 +13,77 @@ class NutritionScreen extends StatefulWidget {
 
 class _NutritionScreenState extends State<NutritionScreen> {
   final TextEditingController _foodController = TextEditingController();
+  final ApiClient _apiClient = ApiClient();
+  final String _userId = 'c2fdb290-8e68-458f-a984-01be63b964cd';
+
   bool _isPlanGenerated = false;
+  bool _isLoading = false;
+  int _dailyTargetCalories = 2200;
+  List<dynamic> _meals = [];
+  List<dynamic> _dietaryAdvice = [];
 
   // Track state for each expandable meal card item
-  final Map<String, bool> _expandedMeals = {
-    'Breakfast': true, // Expanded by default to show local foods detail
-    'Morning Snack': false,
-    'Lunch': false,
-    'Afternoon Snack': false,
-    'Dinner': false,
-  };
+  final Map<String, bool> _expandedMeals = {};
 
   @override
   void dispose() {
     _foodController.dispose();
     super.dispose();
+  }
+
+  Future<void> _generateMealPlan() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final response = await _apiClient.post(
+        '${ApiConstants.baseUrl}/nutrition/generate',
+        {
+          'userId': _userId,
+          'availableFoods': _foodController.text.trim(),
+        },
+      );
+
+      if (response != null && response['success'] == true) {
+        final data = response['data'] ?? {};
+        final int targetCalories = data['dailyTargetCalories'] ?? 2200;
+        final List<dynamic> mealsList = data['meals'] ?? [];
+        final List<dynamic> advice = data['dietaryAdvice'] ?? [];
+
+        setState(() {
+          _dailyTargetCalories = targetCalories;
+          _meals = mealsList;
+          _dietaryAdvice = advice;
+          _isPlanGenerated = true;
+
+          // Dynamically map expand states, first item expanded by default
+          _expandedMeals.clear();
+          for (int i = 0; i < _meals.length; i++) {
+            final meal = _meals[i];
+            final type = meal['type'] ?? 'Meal';
+            _expandedMeals[type] = (i == 0);
+          }
+        });
+      } else {
+        throw Exception(response?['message'] ?? 'Could not generate plan.');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to generate nutrition plan: $e'),
+            backgroundColor: AppColors.emergencyRed,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -53,7 +111,14 @@ class _NutritionScreenState extends State<NutritionScreen> {
                   const SizedBox(height: 20),
 
                   // Conditionally swap view states based on generation trigger toggle
-                  if (_isPlanGenerated) ...[
+                  if (_isLoading) ...[
+                    const SizedBox(height: 100),
+                    const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primaryGreen,
+                      ),
+                    ),
+                  ] else if (_isPlanGenerated) ...[
                     _buildCalorieTargetCard(),
                     const SizedBox(height: 16),
                     _buildMealScheduleTimeline(),
@@ -107,6 +172,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
           const SizedBox(height: 12),
           TextField(
             controller: _foodController,
+            enabled: !_isLoading,
             style: const TextStyle(color: AppColors.textPrimary, fontSize: 15),
             decoration: InputDecoration(
               hintText: 'e.g., rice, lentils, spinach, eggs...',
@@ -127,11 +193,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
             width: double.infinity,
             height: 48,
             child: ElevatedButton.icon(
-              onPressed: () {
-                setState(() {
-                  _isPlanGenerated = true;
-                });
-              },
+              onPressed: _isLoading ? null : _generateMealPlan,
               icon: Icon(
                 _isPlanGenerated ? Icons.refresh_rounded : Icons.restaurant_rounded,
                 size: 18,
@@ -166,8 +228,8 @@ class _NutritionScreenState extends State<NutritionScreen> {
         border: Border.all(color: AppColors.border.withOpacity(0.4)),
       ),
       child: Column(
-        children: const [
-          Text(
+        children: [
+          const Text(
             'Daily Target',
             style: TextStyle(
               fontSize: 14,
@@ -175,17 +237,17 @@ class _NutritionScreenState extends State<NutritionScreen> {
               color: AppColors.textSecondary,
             ),
           ),
-          SizedBox(height: 6),
+          const SizedBox(height: 6),
           Text(
-            '2200',
-            style: TextStyle(
+            '$_dailyTargetCalories',
+            style: const TextStyle(
               fontSize: 36,
               fontWeight: FontWeight.bold,
               color: AppColors.primaryGreen,
             ),
           ),
-          SizedBox(height: 2),
-          Text(
+          const SizedBox(height: 2),
+          const Text(
             'calories',
             style: TextStyle(
               fontSize: 13,
@@ -200,27 +262,44 @@ class _NutritionScreenState extends State<NutritionScreen> {
   // Widget: Map Iteration over Schedule Options Loop (image_93e7c8.png / image_93e502.png)
   Widget _buildMealScheduleTimeline() {
     return Column(
-      children: [
-        _buildMealCard('Breakfast', '8:00 AM', '600 cal', isBreakfast: true),
-        const SizedBox(height: 12),
-        _buildMealCard('Morning Snack', '10:30 AM', '600 cal'),
-        const SizedBox(height: 12),
-        _buildMealCard('Lunch', '1:00 PM', '700 cal'),
-        const SizedBox(height: 12),
-        _buildMealCard('Afternoon Snack', '4:00 PM', '250 cal'),
-        const SizedBox(height: 12),
-        _buildMealCard('Dinner', '7:00 PM', '550 cal'),
-      ],
+      children: _meals.map<Widget>((meal) {
+        final String type = meal['type'] ?? '';
+        final String time = meal['time'] ?? '';
+        final int calories = meal['calories'] ?? 0;
+        final List<dynamic> foods = meal['foods'] ?? [];
+        final String nutrients = meal['nutrients'] ?? '';
+        final String preparation = meal['preparation'] ?? '';
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12.0),
+          child: _buildMealCard(
+            type,
+            time,
+            "$calories cal",
+            foods: foods,
+            nutrients: nutrients,
+            preparation: preparation,
+          ),
+        );
+      }).toList(),
     );
   }
 
   // Widget: Expandable Meal Item Row Component Builder (image_93e4c6.png)
-  Widget _buildMealCard(String mealTitle, String time, String calories, {bool isBreakfast = false}) {
+  Widget _buildMealCard(
+    String mealTitle,
+    String time,
+    String calories, {
+    List<dynamic> foods = const [],
+    String nutrients = '',
+    String preparation = '',
+  }) {
     bool isExpanded = _expandedMeals[mealTitle] ?? false;
 
     IconData getMealIcon() {
-      if (mealTitle.contains('Breakfast')) return Icons.wb_twighlight;
-      if (mealTitle.contains('Snack')) return Icons.apple_rounded;
+      final titleLower = mealTitle.toLowerCase();
+      if (titleLower.contains('breakfast')) return Icons.wb_twighlight;
+      if (titleLower.contains('snack')) return Icons.apple_rounded;
       return Icons.wb_sunny_rounded;
     }
 
@@ -254,7 +333,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
             ),
           ),
 
-          if (isExpanded && isBreakfast)
+          if (isExpanded)
             Padding(
               padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 20.0),
               child: Column(
@@ -264,34 +343,22 @@ class _NutritionScreenState extends State<NutritionScreen> {
                   const SizedBox(height: 16),
                   
                   _buildSubSectionHeader('FOODS'),
-                  _buildBulletPointItem('2 Injera'),
-                  _buildBulletPointItem('1 avocado (100g)'),
-                  _buildBulletPointItem('100g grilled chicken breast'),
-                  _buildBulletPointItem('1 small banana'),
-                  _buildBulletPointItem('1 cup herbal tea'),
+                  ...foods.map((food) => _buildBulletPointItem(food.toString())).toList(),
                   const SizedBox(height: 16),
 
                   _buildSubSectionHeader('NUTRIENTS'),
-                  const Text(
-                    'Protein: 38g, Carbohydrates: 67g, Fats: 25g',
-                    style: TextStyle(fontSize: 14, color: AppColors.textPrimary),
+                  Text(
+                    nutrients,
+                    style: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
                   ),
                   const SizedBox(height: 16),
 
                   _buildSubSectionHeader('PREPARATION'),
-                  const Text(
-                    'Serve grilled chicken sliced on top of the injera, add sliced avocado, and enjoy with a banana and herbal tea.',
-                    style: TextStyle(fontSize: 14, color: AppColors.textPrimary, height: 1.4),
+                  Text(
+                    preparation,
+                    style: const TextStyle(fontSize: 14, color: AppColors.textPrimary, height: 1.4),
                   ),
                 ],
-              ),
-            )
-          else if (isExpanded)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 16.0),
-              child: Text(
-                'Balanced healthy choice instructions tailored to $mealTitle setup template rules.',
-                style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
               ),
             ),
         ],
@@ -300,6 +367,15 @@ class _NutritionScreenState extends State<NutritionScreen> {
   }
 
   Widget _buildNutritionTipsCard() {
+    final List<dynamic> tips = _dietaryAdvice.isNotEmpty
+        ? _dietaryAdvice
+        : [
+            'Ensure adequate hydration by drinking at least 2 liters of water per day.',
+            'Incorporate strength training exercises at least 3 times a week to aid muscle gain.',
+            'Practice relaxation techniques like deep breathing or meditation to help with stress reduction.',
+            'Aim for consistent sleep patterns by going to bed and waking up at regular times.'
+          ];
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20.0),
@@ -322,10 +398,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          _buildTipListItem('Ensure adequate hydration by drinking at least 2 liters of water per day.'),
-          _buildTipListItem('Incorporate strength training exercises at least 3 times a week to aid muscle gain.'),
-          _buildTipListItem('Practice relaxation techniques like deep breathing or meditation to help with stress reduction.'),
-          _buildTipListItem('Aim for consistent sleep patterns by going to bed and waking up at regular times.'),
+          ...tips.map((tip) => _buildTipListItem(tip.toString())).toList(),
         ],
       ),
     );

@@ -67,13 +67,18 @@ class ApiClient {
   Future<dynamic> post(String url, Map<String, dynamic> body) async {
     try {
       final uri = Uri.parse(url);
+      final isAiEndpoint = url.contains('/nutrition/generate') || 
+                           url.contains('/chat') || 
+                           url.contains('/fitness/generate');
+      final currentTimeout = isAiEndpoint ? const Duration(seconds: 60) : _timeout;
+
       final response = await _client
           .post(
             uri,
             headers: _headers,
             body: jsonEncode(body),
           )
-          .timeout(_timeout);
+          .timeout(currentTimeout);
 
       return _processResponse(response);
     } on SocketException {
