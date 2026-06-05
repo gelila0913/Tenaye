@@ -5,10 +5,12 @@ import '../../data/services/health_tracking_service.dart';
 
 class LogMeasurementModal extends StatefulWidget {
   final String initialType;
+  final HealthRecord? record;
   
   const LogMeasurementModal({
     super.key,
     this.initialType = 'Blood Pressure',
+    this.record,
   });
 
   @override
@@ -22,6 +24,7 @@ class _LogMeasurementModalState extends State<LogMeasurementModal> {
   final _notesController = TextEditingController();
   XFile? _pickedImage;
   final ImagePicker _picker = ImagePicker();
+  bool _isSaving = false;
 
   Future<void> _pickImage() async {
     try {
@@ -49,11 +52,28 @@ class _LogMeasurementModalState extends State<LogMeasurementModal> {
   @override
   void initState() {
     super.initState();
-    // Safety check to ensure the initialType is within _measurementTypes
-    if (_measurementTypes.contains(widget.initialType)) {
-      _selectedType = widget.initialType;
+    if (widget.record != null) {
+      final rec = widget.record!;
+      _selectedType = rec.type;
+      _notesController.text = rec.notes ?? '';
+      if (rec.type == 'Blood Pressure') {
+        final parts = rec.value?.split('/') ?? [];
+        if (parts.length >= 2) {
+          _valueController.text = parts[0];
+          _diastolicController.text = parts[1];
+        } else {
+          _valueController.text = rec.value ?? '';
+        }
+      } else {
+        _valueController.text = rec.value ?? '';
+      }
     } else {
-      _selectedType = 'Blood Pressure';
+      // Safety check to ensure the initialType is within _measurementTypes
+      if (_measurementTypes.contains(widget.initialType)) {
+        _selectedType = widget.initialType;
+      } else {
+        _selectedType = 'Blood Pressure';
+      }
     }
   }
 
@@ -111,9 +131,9 @@ class _LogMeasurementModalState extends State<LogMeasurementModal> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Log Measurement',
-                    style: TextStyle(
+                  Text(
+                    widget.record != null ? 'Edit Measurement' : 'Log Measurement',
+                    style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
                       color: AppColors.textPrimary,
@@ -130,36 +150,50 @@ class _LogMeasurementModalState extends State<LogMeasurementModal> {
               // Dropdown Input Section: Type Selection Row
               const Text('Type', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: AppColors.textPrimary)),
               const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12.0),
-                  border: Border.all(color: AppColors.primaryGreen, width: 1.2),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _selectedType,
-                    isExpanded: true,
-                    icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textSecondary),
-                    items: _measurementTypes.map((String type) {
-                      return DropdownMenuItem<String>(
-                        value: type,
-                        child: Text(type, style: const TextStyle(fontSize: 16)),
-                      );
-                    }).toList(),
-                    onChanged: (newValue) {
-                      if (newValue != null) {
-                        setState(() {
-                          _selectedType = newValue;
-                          if (_selectedType != 'Weight') {
-                            _pickedImage = null;
-                          }
-                        });
-                      }
-                    },
-                  ),
-                ),
-              ),
+              widget.record != null
+                  ? Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+                      decoration: BoxDecoration(
+                        color: AppColors.background.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(12.0),
+                        border: Border.all(color: AppColors.border, width: 1),
+                      ),
+                      child: Text(
+                        _selectedType,
+                        style: const TextStyle(fontSize: 16, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                      ),
+                    )
+                  : Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12.0),
+                        border: Border.all(color: AppColors.primaryGreen, width: 1.2),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _selectedType,
+                          isExpanded: true,
+                          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textSecondary),
+                          items: _measurementTypes.map((String type) {
+                            return DropdownMenuItem<String>(
+                              value: type,
+                              child: Text(type, style: const TextStyle(fontSize: 16)),
+                            );
+                          }).toList(),
+                          onChanged: (newValue) {
+                            if (newValue != null) {
+                              setState(() {
+                                _selectedType = newValue;
+                                if (_selectedType != 'Weight') {
+                                  _pickedImage = null;
+                                }
+                              });
+                            }
+                          },
+                        ),
+                      ),
+                    ),
               const SizedBox(height: 18),
 
               // Metric Primary Input Block
@@ -180,7 +214,8 @@ class _LogMeasurementModalState extends State<LogMeasurementModal> {
               const Text('Notes (optional)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: AppColors.textPrimary)),
               const SizedBox(height: 8),
               _buildInputField(controller: _notesController, hint: 'Any notes...', maxLines: 2),
-              if (_selectedType == 'Weight') ...[
+              
+              if (_selectedType == 'Weight' && widget.record == null) ...[
                 const SizedBox(height: 18),
                 const Text('Progress Photo (optional)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: AppColors.textPrimary)),
                 const SizedBox(height: 8),
@@ -233,29 +268,79 @@ class _LogMeasurementModalState extends State<LogMeasurementModal> {
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: () {
-                    if (_valueController.text.trim().isNotEmpty) {
-                      HealthTrackingService().addRecord(
-                        _selectedType,
-                        _valueController.text.trim(),
-                        diastolic: _diastolicController.text.trim().isEmpty 
-                            ? null 
-                            : _diastolicController.text.trim(),
-                        image: _pickedImage,
-                      );
-                      Navigator.of(context).pop();
-                    }
-                  },
+                  onPressed: _isSaving
+                      ? null
+                      : () async {
+                          final valueText = _valueController.text.trim();
+                          if (valueText.isEmpty) return;
+
+                          setState(() {
+                            _isSaving = true;
+                          });
+
+                          bool success;
+                          if (widget.record != null) {
+                            // Edit mode
+                            success = await HealthTrackingService().editRecord(
+                              widget.record!.id,
+                              _selectedType,
+                              valueText,
+                              diastolic: _diastolicController.text.trim().isEmpty
+                                  ? null
+                                  : _diastolicController.text.trim(),
+                              notes: _notesController.text.trim(),
+                            );
+                          } else {
+                            // Add mode
+                            success = await HealthTrackingService().addRecord(
+                              _selectedType,
+                              valueText,
+                              diastolic: _diastolicController.text.trim().isEmpty
+                                  ? null
+                                  : _diastolicController.text.trim(),
+                              image: _pickedImage,
+                              notes: _notesController.text.trim(),
+                            );
+                          }
+
+                          if (mounted) {
+                            setState(() {
+                              _isSaving = false;
+                            });
+                            if (success) {
+                              Navigator.of(context).pop();
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(widget.record != null
+                                      ? 'Failed to update measurement. Please try again.'
+                                      : 'Failed to save measurement. Please try again.'),
+                                  backgroundColor: Colors.red.shade800,
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            }
+                          }
+                        },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryGreen,
                     foregroundColor: AppColors.textLight,
                     elevation: 0,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
                   ),
-                  child: const Text(
-                    'Save Measurement',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
+                  child: _isSaving
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : Text(
+                          widget.record != null ? 'Update Measurement' : 'Save Measurement',
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
                 ),
               ),
             ],

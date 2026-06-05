@@ -148,6 +148,76 @@ class ApiClient {
     }
   }
 
+  /// Sends a PUT request to the specified url path with a JSON body
+  Future<dynamic> put(String url, Map<String, dynamic> body) async {
+    try {
+      final uri = Uri.parse(url);
+      final response = await _client
+          .put(
+            uri,
+            headers: _headers,
+            body: jsonEncode(body),
+          )
+          .timeout(_timeout);
+
+      return _processResponse(response);
+    } on SocketException {
+      throw ApiException(
+        statusCode: 0,
+        error: 'NetworkError',
+        message: 'No internet connection or backend server is offline.',
+      );
+    } on http.ClientException catch (e) {
+      throw ApiException(
+        statusCode: 0,
+        error: 'ClientException',
+        message: e.message,
+      );
+    } catch (e) {
+      if (e.toString().contains('TimeoutException')) {
+        throw ApiException(
+          statusCode: 408,
+          error: 'TimeoutError',
+          message: 'Request timed out. Please try again.',
+        );
+      }
+      rethrow;
+    }
+  }
+
+  /// Sends a DELETE request to the specified url path
+  Future<dynamic> delete(String url) async {
+    try {
+      final uri = Uri.parse(url);
+      final response = await _client
+          .delete(uri, headers: _headers)
+          .timeout(_timeout);
+
+      return _processResponse(response);
+    } on SocketException {
+      throw ApiException(
+        statusCode: 0,
+        error: 'NetworkError',
+        message: 'No internet connection or backend server is offline.',
+      );
+    } on http.ClientException catch (e) {
+      throw ApiException(
+        statusCode: 0,
+        error: 'ClientException',
+        message: e.message,
+      );
+    } catch (e) {
+      if (e.toString().contains('TimeoutException')) {
+        throw ApiException(
+          statusCode: 408,
+          error: 'TimeoutError',
+          message: 'Request timed out. Please try again.',
+        );
+      }
+      rethrow;
+    }
+  }
+
   /// Helper to process the HTTP response
   dynamic _processResponse(http.Response response) {
     final int statusCode = response.statusCode;

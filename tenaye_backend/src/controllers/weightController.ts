@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
 import fs from 'fs';
+import path from 'path';
 
 export class WeightController {
   /**
@@ -118,6 +119,93 @@ export class WeightController {
     return res.status(200).json({
       success: true,
       data: history,
+    });
+  }
+
+  /**
+   * Update a weight log (PUT /api/weight/:id)
+   */
+  static async updateWeight(req: Request, res: Response) {
+    const { id } = req.params;
+    const { weight } = req.body;
+
+    if (weight === undefined || weight === null || weight === '') {
+      res.status(400).json({
+        success: false,
+        error: 'ValidationError',
+        message: 'weight is required.',
+      });
+      return;
+    }
+
+    const parsedWeight = parseFloat(String(weight));
+    if (isNaN(parsedWeight)) {
+      return res.status(400).json({
+        success: false,
+        error: 'ValidationError',
+        message: 'weight must be a valid number.',
+      });
+    }
+
+    const log = await prisma.weightLog.findUnique({
+      where: { id },
+    });
+
+    if (!log) {
+      res.status(404).json({
+        success: false,
+        error: 'NotFoundError',
+        message: `WeightLog with ID ${id} was not found.`,
+      });
+      return;
+    }
+
+    const updated = await prisma.weightLog.update({
+      where: { id },
+      data: {
+        weight: parsedWeight,
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Weight log updated successfully',
+      data: updated,
+    });
+  }
+
+  /**
+   * Delete a weight log (DELETE /api/weight/:id)
+   */
+  static async deleteWeight(req: Request, res: Response) {
+    const { id } = req.params;
+
+    const log = await prisma.weightLog.findUnique({
+      where: { id },
+    });
+
+    if (!log) {
+      res.status(404).json({
+        success: false,
+        error: 'NotFoundError',
+        message: `WeightLog with ID ${id} was not found.`,
+      });
+      return;
+    }
+
+    // Delete photo if exists
+    if (log.photoUrl) {
+      const fullPath = path.join(process.cwd(), log.photoUrl);
+      fs.unlink(fullPath, () => {});
+    }
+
+    await prisma.weightLog.delete({
+      where: { id },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Weight log deleted successfully',
     });
   }
 }

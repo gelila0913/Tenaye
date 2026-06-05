@@ -11,4 +11,10 @@ router.post('/log', upload.single('photo'), asyncWrapper(WeightController.logWei
 // GET /api/weight/history/:userId
 router.get('/history/:userId', asyncWrapper(WeightController.getWeightHistory));
 
+// PUT /api/weight/:id
+router.put('/:id', asyncWrapper(WeightController.updateWeight));
+
+// DELETE /api/weight/:id
+router.delete('/:id', asyncWrapper(WeightController.deleteWeight));
+
 export default router;

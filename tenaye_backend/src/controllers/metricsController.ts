@@ -90,4 +90,77 @@ export class MetricsController {
       data: grouped,
     });
   }
+
+  /**
+   * Update a health measurement (PUT /api/metrics/:id)
+   */
+  static async updateMetric(req: Request, res: Response) {
+    const { id } = req.params;
+    const { value, notes } = req.body;
+
+    if (value === undefined || value === null || value === '') {
+      res.status(400).json({
+        success: false,
+        error: 'ValidationError',
+        message: 'Value is required.',
+      });
+      return;
+    }
+
+    const measurement = await prisma.healthMeasurement.findUnique({
+      where: { id },
+    });
+
+    if (!measurement) {
+      res.status(404).json({
+        success: false,
+        error: 'NotFoundError',
+        message: `HealthMeasurement with ID ${id} was not found.`,
+      });
+      return;
+    }
+
+    const updated = await prisma.healthMeasurement.update({
+      where: { id },
+      data: {
+        value: String(value),
+        notes: notes !== undefined ? notes : null,
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Metric updated successfully',
+      data: updated,
+    });
+  }
+
+  /**
+   * Delete a health measurement (DELETE /api/metrics/:id)
+   */
+  static async deleteMetric(req: Request, res: Response) {
+    const { id } = req.params;
+
+    const measurement = await prisma.healthMeasurement.findUnique({
+      where: { id },
+    });
+
+    if (!measurement) {
+      res.status(404).json({
+        success: false,
+        error: 'NotFoundError',
+        message: `HealthMeasurement with ID ${id} was not found.`,
+      });
+      return;
+    }
+
+    await prisma.healthMeasurement.delete({
+      where: { id },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Metric deleted successfully',
+    });
+  }
 }
