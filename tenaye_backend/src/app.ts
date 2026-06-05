@@ -4,10 +4,11 @@ import path from 'path';
 import { errorHandler } from './middlewares/errorHandler';
 import profileRouter from './routes/profileRoutes';
 import weightRouter from './routes/weightRoutes';
+import nutritionRouter from './routes/nutritionRoutes';
+import fitnessRouter from './routes/fitnessRoutes';
+import chatRouter from './routes/chatRoutes';
 import medicationsRouter from './modules/medications/routes';
 import moodRouter from './modules/mood/routes';
-import nutritionRouter from './modules/nutrition/routes';
-import fitnessRouter from './modules/fitness/routes';
 import sosRouter from './modules/sos/routes';
 
 const app = express();
@@ -26,6 +27,7 @@ app.use('/api/medications', medicationsRouter);
 app.use('/api/mood', moodRouter);
 app.use('/api/nutrition', nutritionRouter);
 app.use('/api/fitness', fitnessRouter);
+app.use('/api/chat', chatRouter);
 app.use('/api/sos', sosRouter);
 
 // Basic Sandbox Health Check Verification Anchor
