@@ -5,9 +5,95 @@ import '../../../../core/utils/tab_navigation_controller.dart';
 import '../../../chat/presentation/screens/chat_assistant_screen.dart';
 import '../widgets/greeting_header.dart';
 import '../widgets/quick_action_grid.dart';
+import '../../../../services/api_client.dart';
+import '../../../../core/constants/api_constants.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  final ApiClient _apiClient = ApiClient();
+  bool _isLoading = false;
+
+  // Constants matching the dev environment
+  final String _userId = 'c2fdb290-8e68-458f-a984-01be63b964cd';
+
+  String _bloodPressure = '—';
+  String _glucose = '—';
+  String _weight = '—';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchDashboardData();
+  }
+
+  /// Retrieve latest recorded vital signs and recent weight logs
+  Future<void> _fetchDashboardData() async {
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // 1. Fetch metrics history grouped by type
+      final metricsUrl = '${ApiConstants.baseUrl}/metrics/history/$_userId';
+      final metricsResponse = await _apiClient.get(metricsUrl);
+
+      // 2. Fetch weight log history (sorted by date ascending)
+      final weightUrl = '${ApiConstants.baseUrl}/weight/history/$_userId';
+      final weightResponse = await _apiClient.get(weightUrl);
+
+      if (!mounted) return;
+      setState(() {
+        // Parse health measurements (extract Blood Pressure and Glucose)
+        if (metricsResponse != null && metricsResponse['success'] == true) {
+          final data = metricsResponse['data'] as Map<String, dynamic>?;
+          if (data != null) {
+            // Latest Blood Pressure is the first element (sorted by desc in backend)
+            final bpList = data['Blood Pressure'] as List?;
+            if (bpList != null && bpList.isNotEmpty) {
+              _bloodPressure = bpList.first['value']?.toString() ?? '—';
+            } else {
+              _bloodPressure = '—';
+            }
+
+            // Latest Glucose (look for either 'Glucose' or 'Blood Glucose')
+            final glucoseList = (data['Glucose'] as List?) ?? (data['Blood Glucose'] as List?);
+            if (glucoseList != null && glucoseList.isNotEmpty) {
+              _glucose = glucoseList.first['value']?.toString() ?? '—';
+            } else {
+              _glucose = '—';
+            }
+          }
+        }
+
+        // Parse weight logs (last element is the most recent due to asc sorting)
+        if (weightResponse != null && weightResponse['success'] == true) {
+          final weightList = weightResponse['data'] as List?;
+          if (weightList != null && weightList.isNotEmpty) {
+            _weight = weightList.last['weight']?.toString() ?? '—';
+          } else {
+            _weight = '—';
+          }
+        }
+      });
+    } on ApiException catch (e) {
+      debugPrint('ApiException while loading dashboard data: ${e.message}');
+    } catch (e) {
+      debugPrint('Unexpected error while loading dashboard data: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,16 +103,19 @@ class DashboardScreen extends StatelessWidget {
         children: [
           // Primary Scroll Surface Container
           RefreshIndicator(
-            onRefresh: () async {
-              // Add vital refresh logic here later if needed
-            },
+            onRefresh: _fetchDashboardData,
             color: AppColors.primaryGreen,
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const GreetingHeader(),
+                  GreetingHeader(
+                    bloodPressure: _bloodPressure,
+                    glucose: _glucose,
+                    weight: _weight,
+                    isLoading: _isLoading,
+                  ),
                   Padding(
                     padding: const EdgeInsets.all(20.0),
                     child: Column(
@@ -75,7 +164,7 @@ class DashboardScreen extends StatelessWidget {
                         const Text("QUICK ACTIONS", style: AppTextStyles.sectionHeader),
                         const SizedBox(height: 16),
                         const QuickActionGrid(),
-                        const SizedBox(height: 80), // Creates bottom spacing safely so items aren't cut off
+                        const SizedBox(height: 80), // Bottom spacing so items aren't cut off
                       ],
                     ),
                   ),
@@ -84,7 +173,7 @@ class DashboardScreen extends StatelessWidget {
             ),
           ),
           
-          // Adjusted Floating AI Copilot position block (brought closer to content grid padding boundary)
+          // Floating AI Copilot position block
           Positioned(
             bottom: 20,
             right: 20, 

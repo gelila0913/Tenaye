@@ -2,10 +2,20 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../emergency_sos/presentation/screens/sos_active_screen.dart';
-import '../../../health_tracking/data/services/health_tracking_service.dart';
 
 class GreetingHeader extends StatelessWidget {
-  const GreetingHeader({super.key});
+  final String bloodPressure;
+  final String glucose;
+  final String weight;
+  final bool isLoading;
+
+  const GreetingHeader({
+    super.key,
+    required this.bloodPressure,
+    required this.glucose,
+    required this.weight,
+    required this.isLoading,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -84,29 +94,14 @@ class GreetingHeader extends StatelessWidget {
           const SizedBox(height: 20),
           
           // Horizontal inline vitals tracker panel segment row
-          ValueListenableBuilder<List<HealthRecord>>(
-            valueListenable: HealthTrackingService().recordsNotifier,
-            builder: (context, records, child) {
-              String getLatestValue(String type, String unit) {
-                final match = records.lastWhere(
-                  (r) => r.type == type,
-                  orElse: () => HealthRecord(type: type, displayValue: "—", timestamp: ""),
-                );
-                if (match.displayValue == "—") return "—";
-                // Strip the unit suffix to display only the raw values on the dashboard vital chips
-                return match.displayValue.replaceAll(" $unit", "");
-              }
-
-              return Row(
-                children: [
-                  Expanded(child: _buildVitalChip("Blood Pressure", getLatestValue("Blood Pressure", "mmHg"), "mmHg")),
-                  const SizedBox(width: 12),
-                  Expanded(child: _buildVitalChip("Glucose", getLatestValue("Blood Glucose", "mg/dL"), "mg/dL")),
-                  const SizedBox(width: 12),
-                  Expanded(child: _buildVitalChip("Weight", getLatestValue("Weight", "kg"), "kg")),
-                ],
-              );
-            },
+          Row(
+            children: [
+              Expanded(child: _buildVitalChip("Blood Pressure", bloodPressure, "mmHg")),
+              const SizedBox(width: 12),
+              Expanded(child: _buildVitalChip("Glucose", glucose, "mg/dL")),
+              const SizedBox(width: 12),
+              Expanded(child: _buildVitalChip("Weight", weight, "kg")),
+            ],
           ),
         ],
       ),
@@ -131,13 +126,22 @@ class GreetingHeader extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 6),
-          Text(
-            value, 
-            style: AppTextStyles.vitalValuePlaceholder.copyWith(
-              color: AppColors.textLight,
-              fontSize: value.length > 6 ? 15 : 18,
-            ),
-          ),
+          isLoading
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+              : Text(
+                  value, 
+                  style: AppTextStyles.vitalValuePlaceholder.copyWith(
+                    color: AppColors.textLight,
+                    fontSize: value.length > 6 ? 15 : 18,
+                  ),
+                ),
           const SizedBox(height: 4),
           Text(
             unit, 
