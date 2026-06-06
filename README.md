@@ -38,8 +38,7 @@ Since this is a prototype build not published on the Play Store, please follow t
 
 ### 1. Download the APK
 
-- Open **Chrome** (or any browser) on your Android device  
-- Visit the following link:
+-click the following link  on your Android device  
 [http://173.212.213.249/tenaye.apk](http://173.212.213.249/tenaye.apk)
 
 - The APK file will begin downloading automatically  
