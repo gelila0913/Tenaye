@@ -11,6 +11,8 @@
 
 ## 🚀 Overview
 
+You can directly watch the walkthrough video of the Mobile app built: https://drive.google.com/file/d/1CqZY71RWeTUfqbQaB_uuZ1Pp6ObyacOs/view?usp=drive_link
+
 Tenaye is a personal health assistant designed to combine daily wellness tracking with emergency response support.
 
 The app enables users to:
